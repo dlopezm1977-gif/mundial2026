@@ -177,7 +177,7 @@
   </div>
   <div class="header-actions">
     <span id="syncStatus" style="font-family:'DM Mono',monospace;font-size:.68rem;color:var(--muted);align-self:center;min-width:160px">🔄 Cargando…</span>
-    <button class="btn" onclick="forceSyncFromRemote()" title="Recargar datos del servidor">↺ Sincronizar</button>
+    <button class="btn" onclick="forceSyncFromRemote()" title="Recargar datos ahora (se actualiza solo cada 5 min)">↺ Actualizar</button>
     <button class="btn" onclick="exportCSV()">⬇ Exportar CSV</button>
     <button class="btn" onclick="showImport()">⬆ Importar CSV</button>
     <button class="btn btn-accent" onclick="resetAll()">↺ Resetear</button>
@@ -979,12 +979,6 @@ const SEED_RESULTS = {"1":{"home":2,"away":0},"2":{"home":1,"away":1},"3":{"home
   }
 
   renderAll();
-
-  // Auto-refresh cada 30 segundos para ver cambios de otros usuarios
-  setInterval(async () => {
-    await loadResults();
-    renderAll();
-  }, 30000);
 })();
 </script>
 </body>
