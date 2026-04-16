@@ -931,7 +931,7 @@ async function importCSV(){
 }
 async function resetAll(){
   if(!confirm('¿Resetear TODOS los resultados para todos los usuarios? No hay vuelta atrás.'))return;
-  results={};
+  results = { _seeded: true };
   renderAll();
   await saveResults();
 }
@@ -972,9 +972,9 @@ const SEED_RESULTS = {"1":{"home":2,"away":0},"2":{"home":1,"away":1},"3":{"home
   // Cargar datos desde JSONBin
   await loadResults();
 
-  // Si el bin está vacío (primer uso), subir el seed de primera fase
-  if (Object.keys(results).length === 0) {
-    results = { ...SEED_RESULTS };
+  // Solo cargar el seed la primera vez que se usa el bin (nunca tras un reset)
+  if (!results._seeded) {
+    results = { ...SEED_RESULTS, _seeded: true };
     await saveResults();
   }
 
