@@ -9,7 +9,7 @@
   :root {
     --bg:#0a0e1a; --surface:#111827; --surface2:#1a2236; --border:#1f2d4a;
     --accent:#e8c84a; --accent2:#3b82f6; --red:#ef4444; --green:#22c55e;
-    --text:#e2e8f0; --muted:#64748b;
+    --purple:#a855f7; --text:#e2e8f0; --muted:#64748b;
   }
   *{margin:0;padding:0;box-sizing:border-box;}
   body{background:var(--bg);color:var(--text);font-family:'DM Sans',sans-serif;min-height:100vh;
@@ -177,7 +177,8 @@
   </div>
   <div class="header-actions">
     <span id="syncStatus" style="font-family:'DM Mono',monospace;font-size:.68rem;color:var(--muted);align-self:center;min-width:160px">🔄 Cargando…</span>
-    <button class="btn" onclick="forceSyncFromRemote()" title="Recargar datos ahora">↺ Actualizar</button>
+    <button class="btn" onclick="forceSyncFromRemote()" title="Recargar datos del servidor">↺ Actualizar</button>
+    <a href="porra2026.html" class="btn" style="text-decoration:none;background:var(--purple);color:#fff;border-color:var(--purple);font-weight:700" title="Ir a la porra">🎯 Porra</a>
     <button class="btn" onclick="exportCSV()">⬇ Exportar CSV</button>
     <button class="btn" onclick="showImport()">⬆ Importar CSV</button>
     <button class="btn btn-accent" onclick="resetAll()">↺ Resetear</button>
@@ -396,7 +397,7 @@ const KO_MATCHES = [
   {id:75,date:'2026-06-29',t:'18:00',phase:'16avos de Final',
     hs:{type:'group',pos:1,group:'F'}, as:{type:'group',pos:2,group:'C'}, venue:'Monterrey'},
   {id:76,date:'2026-06-29',t:'22:00',phase:'16avos de Final',
-    hs:{type:'group',pos:1,group:'E'}, as:{type:'group',pos:2,group:'F'}, venue:'Houston'},
+    hs:{type:'group',pos:1,group:'C'}, as:{type:'group',pos:2,group:'F'}, venue:'Houston'},
   {id:77,date:'2026-06-30',t:'14:00',phase:'16avos de Final',
     hs:{type:'group',pos:1,group:'I'}, as:{type:'third',pools:['C','D','F','G','H']}, venue:'Nueva Jersey'},
   {id:78,date:'2026-06-30',t:'18:00',phase:'16avos de Final',
@@ -568,6 +569,50 @@ function getBestThirds(st) {
     .slice(0,8);
 }
 
+// Pre-assigns best 8 thirds to the 8 KO slots without repetition.
+// Each third can only go to one slot. Assignment is done greedily:
+// iterate slots in order of ranking (best third first), assign to the
+// highest-priority slot whose pools include that third's group.
+let thirdAssignmentCache = null;
+function getThirdAssignment(st) {
+  if (thirdAssignmentCache) return thirdAssignmentCache;
+
+  // All 8 third-place slots with their pools (pools key → pools array)
+  const THIRD_SLOTS = [
+    {key:'A,B,C,D,F', pools:['A','B','C','D','F']},
+    {key:'C,D,F,G,H', pools:['C','D','F','G','H']},
+    {key:'C,E,F,H,I', pools:['C','E','F','H','I']},
+    {key:'E,H,I,J,K', pools:['E','H','I','J','K']},
+    {key:'B,E,F,I,J', pools:['B','E','F','I','J']},
+    {key:'A,E,H,I,J', pools:['A','E','H','I','J']},
+    {key:'E,F,G,I,J', pools:['E','F','G','I','J']},
+    {key:'D,E,I,J,L', pools:['D','E','I','J','L']},
+  ];
+
+  const best = getBestThirds(st); // top 8 thirds sorted by quality
+  const assignment = {}; // pools key → team name
+  const usedGroups = new Set();
+  const usedSlots  = new Set();
+
+  // Greedy: for each third (best first), find the best available slot
+  for (const third of best) {
+    if (usedGroups.has(third.group)) continue;
+    // Find first available slot that accepts this third's group
+    for (const slot of THIRD_SLOTS) {
+      if (usedSlots.has(slot.key)) continue;
+      if (slot.pools.includes(third.group)) {
+        assignment[slot.key] = third.name;
+        usedGroups.add(third.group);
+        usedSlots.add(slot.key);
+        break;
+      }
+    }
+  }
+
+  thirdAssignmentCache = assignment;
+  return assignment;
+}
+
 // ── SLOT RESOLUTION ──────────────────────────────────
 // Returns {name: 'TeamName'|null, label:'display'}
 function resolveSlot(slot, st, cache) {
@@ -584,11 +629,12 @@ function resolveSlot(slot, st, cache) {
     }
   } else if (slot.type === 'third') {
     if (allGroupsDone()) {
-      const best = getBestThirds(st);
-      // Among the best 8 thirds, pick the one whose group is in pools
-      // FIFA assigns specific thirds to specific slots - simplified: pick highest ranked from eligible pools
-      const eligible = best.filter(t=>slot.pools.includes(t.group));
-      res = eligible.length ? { name: eligible[0].name, label: null } : { name: null, label: `Mejor 3º (${slot.pools.join('/')})` };
+      const assignment = getThirdAssignment(st);
+      const key = slot.pools.join(',');
+      const team = assignment[key];
+      res = team
+        ? { name: team, label: null }
+        : { name: null, label: `Mejor 3º (${slot.pools.join('/')})` };
     } else {
       res = { name: null, label: `Mejor 3º (${slot.pools.join('/')})` };
     }
@@ -813,6 +859,7 @@ async function clearScore(){
 }
 
 function renderAll(){
+  thirdAssignmentCache = null; // recalculate third assignment on every render
   renderMatches();updateStats();
   if(document.getElementById('sec-clasificacion').classList.contains('active'))renderStandings();
   refreshCsvPreview();
