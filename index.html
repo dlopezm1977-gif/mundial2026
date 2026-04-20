@@ -59,9 +59,11 @@
   /* MATCH CARD */
   .matches-list{display:flex;flex-direction:column;gap:.4rem;}
   .match-card{background:var(--surface);border:1px solid var(--border);border-radius:6px;
-    display:grid;grid-template-columns:70px 1fr 128px 1fr 92px 28px;
+    display:grid;grid-template-columns:32px 70px 1fr 128px 1fr 92px 28px;
     align-items:center;overflow:hidden;transition:border-color .15s;}
   .match-card.played{border-left:3px solid var(--green);}
+  .star-btn{width:32px;height:32px;border:none;background:transparent;color:var(--muted);font-size:1.1rem;cursor:pointer;transition:color .15s;}
+  .star-btn.active{color:var(--accent);}
   .match-card.pending{border-left:3px solid var(--border);}
   .match-card.knockout{background:rgba(59,130,246,.03);}
   .match-card.knockout.pending{border-left:3px solid rgba(59,130,246,.28);}
@@ -161,7 +163,7 @@
     background:rgba(232,200,74,.12);border:1px solid rgba(232,200,74,.2);
     padding:.08rem .32rem;border-radius:3px;white-space:nowrap;margin-top:.15rem;display:inline-block;}
   @media(max-width:680px){
-    .match-card{grid-template-columns:58px 1fr 108px 1fr 70px 26px;}
+    .match-card{grid-template-columns:32px 58px 1fr 108px 1fr 70px 26px;}
     .match-team{font-size:.7rem;padding:.5rem;}
     .standings-grid{grid-template-columns:1fr;}
     header h1{font-size:1.85rem;}
@@ -470,6 +472,8 @@ let results = {};
 let activeFilter = 'ALL';
 let currentEditId = null;
 let isSyncing = false;
+let showFavoritesOnly = false;
+let favoriteMatches = {};
 
 // ── JSONBIN CONFIG ────────────────────────────────────
 const BIN_ID  = '69e0e848aaba88219706dc21';
@@ -704,6 +708,8 @@ function renderMatches() {
   else if (activeFilter==='KO') filtered = KO_MATCHES;
   else filtered = GROUP_MATCHES.filter(m=>m.group===activeFilter);
 
+  if (showFavoritesOnly) filtered = filtered.filter(m => favoriteMatches[m.id]);
+
   // Bucket by phase+date
   const buckets = {};
   filtered.forEach(m => {
@@ -761,6 +767,7 @@ function renderMatches() {
 
       html+=`
         <div class="match-card ${played?'played':'pending'}${isKO?' knockout':''}${isFinal?' final-match':''}" id="card-${m.id}">
+          <button class="star-btn${favoriteMatches[m.id]?' active':''}" onclick="toggleFavorite(${m.id})" title="Marcar partido favorito">${favoriteMatches[m.id]?'★':'☆'}</button>
           <div class="match-time"><strong>${spainTime}</strong><span class="time-label">hora ESP</span></div>
           ${teamCellHTML(hR,'home')}
           <div class="match-score${canEdit?'':' no-click'}" ${canEdit?`onclick="openScoreModal(${m.id})"`:''}>
@@ -890,9 +897,33 @@ function buildFilterBar(){
     const lbl=f==='ALL'?'Todos':f==='KO'?'Eliminatorias':'Grupo '+f;
     html+=`<button class="filter-btn${f===activeFilter?' active':''}" onclick="setFilter('${f}')">${lbl}</button>`;
   });
+  html+=`<button class="filter-btn${showFavoritesOnly?' active':''}" onclick="toggleFavoriteFilter()">⭐ Favoritos</button>`;
   document.getElementById('filterBar').innerHTML=html;
 }
 function setFilter(f){activeFilter=f;buildFilterBar();renderMatches();}
+
+function toggleFavoriteFilter(){
+  showFavoritesOnly = !showFavoritesOnly;
+  buildFilterBar();
+  renderMatches();
+}
+
+function loadFavoriteMatches(){
+  try {
+    const raw = localStorage.getItem('mundial2026_favorites');
+    favoriteMatches = raw ? JSON.parse(raw) : {};
+  } catch(e) { favoriteMatches = {}; }
+}
+
+function saveFavoriteMatches(){
+  try { localStorage.setItem('mundial2026_favorites', JSON.stringify(favoriteMatches)); } catch(e) {}
+}
+
+function toggleFavorite(matchId){
+  favoriteMatches[matchId] = !favoriteMatches[matchId];
+  saveFavoriteMatches();
+  renderMatches();
+}
 
 // ── STANDINGS ─────────────────────────────────────────
 function renderStandings(){
@@ -1012,6 +1043,7 @@ const SEED_RESULTS = {"1":{"home":2,"away":0},"2":{"home":1,"away":1},"3":{"home
 
 // ── INIT ──────────────────────────────────────────────
 (async () => {
+  loadFavoriteMatches();
   buildFilterBar();
   renderMatches();
   updateStats();
