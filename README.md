@@ -8,11 +8,16 @@ Este proyecto consta de dos aplicaciones web principales:
 
 ### 🏆 Seguimiento de Partidos (`index.html`)
 - **Visualización de partidos**: Muestra todos los partidos del Mundial 2026 organizados por fases
-- **Ingreso de resultados**: Permite introducir resultados de partidos con posibilidad de penaltis
+- **Ingreso de resultados**: Permite introducir resultados de partidos con posibilidad de penaltis (solo para usuarios admin)
+- **Marcado de partidos favoritos**: Los usuarios admin pueden marcar partidos como favoritos
+- **Indicación de emisión en TVE**: Los usuarios admin pueden marcar partidos que se emitirán en TVE además de DAZN
+- **Logos de canales**: Muestra automáticamente los logos de DAZN y TVE según la emisión
 - **Clasificación de grupos**: Calcula automáticamente las posiciones de cada grupo
 - **Estadísticas**: Muestra estadísticas generales del torneo (partidos jugados, goles, etc.)
-- **Exportación/Importación CSV**: Permite guardar y cargar datos en formato CSV
-- **Sincronización en tiempo real**: Usa JSONBin para almacenamiento compartido
+- **Protección de admin**: Solo usuarios con contraseña pueden editar resultados y gestionar marcadores
+- **Exportación/Importación CSV**: Permite guardar y cargar datos en formato CSV (solo para admin)
+- **Sincronización en tiempo real**: Usa JSONBin para almacenamiento compartido de resultados, favoritos y TVE
+- **Filtros**: Filtrar por grupos, fases o partidos favoritos
 
 ### 🎯 Porra Mundial (`porra2026.html`)
 - **Pronósticos de partidos**: Permite predecir resultados de los 72 partidos de fase de grupos
@@ -33,13 +38,34 @@ Este proyecto consta de dos aplicaciones web principales:
 - **Eliminatorias**: 16avos, Octavos, Cuartos, Semifinales, Final y Tercer Puesto
 - **Sedes**: Estados Unidos, México y Canadá
 
+## 🚀 Cómo Usar
+
+1. **Clona o descarga** el repositorio
+2. **Abre `index.html`** en un navegador web moderno
+3. **Para editar resultados**: Haz clic en "🔐 Admin" e ingresa la contraseña ('admin2026')
+4. **Marcar partidos**: Como admin, usa los botones ⭐ (favorito) y 📺 (TVE)
+5. **Ver como usuario normal**: Sin login, puedes ver todos los datos marcados por admin
+6. **Servidor local**: Para mejor experiencia, ejecuta `python -m http.server 8000` y abre `http://localhost:8000`
+
+## 🔐 Sistema de Admin
+
+- **Contraseña**: 'admin2026'
+- **Permisos de admin**:
+  - Editar resultados de partidos
+  - Marcar/desmarcar favoritos
+  - Marcar partidos para TVE
+  - Exportar/importar CSV
+  - Resetear datos
+- **Usuarios normales**: Pueden ver resultados, estadísticas y filtros, pero no editar
+
 ## 🛠️ Tecnologías Utilizadas
 
 - **HTML5** y **CSS3** puro (sin frameworks)
 - **JavaScript** vanilla (ES6+)
-- **JSONBin** para almacenamiento remoto
+- **JSONBin** para almacenamiento remoto compartido
 - **Google Fonts** (Bebas Neue, DM Sans, DM Mono)
 - **FlagCDN** para banderas de países
+- **Logos locales** para DAZN y TVE
 
 ## 🎨 Características de Diseño
 
@@ -48,6 +74,25 @@ Este proyecto consta de dos aplicaciones web principales:
 - **Interfaz responsive** optimizada para móviles
 - **Animaciones sutiles** y transiciones suaves
 - **Iconografía** con emojis y símbolos deportivos
+- **Estados visuales** para partidos jugados, pendientes y favoritos
+
+## 📊 Sincronización de Datos
+
+- **Resultados**: Guardados en JSONBin para acceso compartido
+- **Favoritos y TVE**: Marcadores globales visibles para todos los usuarios
+- **Estado de sincronización**: Indicador en tiempo real del estado de guardado
+- **Persistencia local**: Respaldo en localStorage para funcionamiento offline
+
+## 🤝 Contribución
+
+Si quieres contribuir al proyecto:
+1. Haz fork del repositorio
+2. Crea una rama para tu feature
+3. Envía un pull request
+
+## 📄 Licencia
+
+Este proyecto es de uso personal. No redistribuir sin permiso.
 
 ## 📊 Funcionalidades Técnicas
 

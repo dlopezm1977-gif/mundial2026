@@ -59,11 +59,17 @@
   /* MATCH CARD */
   .matches-list{display:flex;flex-direction:column;gap:.4rem;}
   .match-card{background:var(--surface);border:1px solid var(--border);border-radius:6px;
-    display:grid;grid-template-columns:32px 70px 1fr 128px 1fr 92px 28px;
+    display:grid;grid-template-columns:70px 1fr 128px 1fr 92px 28px;
+    align-items:center;overflow:hidden;transition:border-color .15s;}
+  .match-card.admin{background:var(--surface);border:1px solid var(--border);border-radius:6px;
+    display:grid;grid-template-columns:64px 70px 1fr 128px 1fr 92px 28px;
     align-items:center;overflow:hidden;transition:border-color .15s;}
   .match-card.played{border-left:3px solid var(--green);}
-  .star-btn{width:32px;height:32px;border:none;background:transparent;color:var(--muted);font-size:1.1rem;cursor:pointer;transition:color .15s;}
+  .star-btn{width:30px;height:15px;border:none;background:transparent;color:var(--muted);font-size:.8rem;cursor:pointer;transition:color .15s;}
   .star-btn.active{color:var(--accent);}
+  .tve-btn{width:30px;height:15px;border:none;background:transparent;color:var(--muted);font-size:.8rem;cursor:pointer;transition:color .15s;}
+  .tve-btn.active{color:#e53e3e;}
+  .match-btns{display:flex;flex-direction:column;gap:2px;align-items:center;justify-content:center;}
   .match-card.pending{border-left:3px solid var(--border);}
   .match-card.knockout{background:rgba(59,130,246,.03);}
   .match-card.knockout.pending{border-left:3px solid rgba(59,130,246,.28);}
@@ -71,6 +77,7 @@
   .match-time{padding:.6rem .65rem;font-family:'DM Mono',monospace;font-size:.92rem;font-weight:700;
     color:var(--accent);border-right:1px solid var(--border);text-align:center;line-height:1.2;}
   .match-time .time-label{font-size:.5rem;color:var(--muted);display:block;margin-top:.1rem;letter-spacing:.07em;font-weight:400;}
+  .match-time .channel{display:block;margin-top:.1rem;}
   .match-team{padding:.6rem .65rem;display:flex;align-items:center;gap:.4rem;font-size:.8rem;font-weight:500;}
   .match-team.home{justify-content:flex-end;text-align:right;}
   .match-team .ph{font-size:.64rem;color:var(--muted);font-style:italic;font-weight:400;
@@ -163,7 +170,8 @@
     background:rgba(232,200,74,.12);border:1px solid rgba(232,200,74,.2);
     padding:.08rem .32rem;border-radius:3px;white-space:nowrap;margin-top:.15rem;display:inline-block;}
   @media(max-width:680px){
-    .match-card{grid-template-columns:32px 58px 1fr 108px 1fr 70px 26px;}
+    .match-card{grid-template-columns:65px 1fr 108px 1fr 70px 26px;}
+    .match-card.admin{grid-template-columns:64px 65px 1fr 108px 1fr 70px 26px;}
     .match-team{font-size:.7rem;padding:.5rem;}
     .standings-grid{grid-template-columns:1fr;}
     header h1{font-size:1.85rem;}
@@ -181,9 +189,12 @@
     <span id="syncStatus" style="font-family:'DM Mono',monospace;font-size:.68rem;color:var(--muted);align-self:center;min-width:160px">🔄 Cargando…</span>
     <button class="btn" onclick="forceSyncFromRemote()" title="Recargar datos del servidor">↺ Actualizar</button>
     <a href="porra2026.html" class="btn" style="text-decoration:none;background:var(--purple);color:#fff;border-color:var(--purple);font-weight:700" title="Ir a la porra">🎯 Porra</a>
-    <button class="btn" onclick="exportCSV()">⬇ Exportar CSV</button>
-    <button class="btn" onclick="showImport()">⬆ Importar CSV</button>
-    <button class="btn btn-accent" onclick="resetAll()">↺ Resetear</button>
+    <span id="adminActions" style="display:none">
+      <button class="btn" onclick="exportCSV()">⬇ Exportar CSV</button>
+      <button class="btn" onclick="showImport()">⬆ Importar CSV</button>
+      <button class="btn btn-accent" onclick="resetAll()">↺ Resetear</button>
+    </span>
+    <button class="btn" id="adminBtn" onclick="handleAdmin()">🔐 Admin</button>
   </div>
 </header>
 
@@ -285,6 +296,14 @@ function flag(team, sz=24) {
   if (!c) return '';
   return `<img src="https://flagcdn.com/w40/${c}.png" alt="${team}" title="${team}" style="width:${sz}px;height:auto;border-radius:2px;vertical-align:middle;box-shadow:0 1px 3px rgba(0,0,0,.4)">`;
 }
+
+// ── LOGOS ──────────────────────────────────────────────
+const DAZN_LOGO = '<img src="DAZN.png" alt="DAZN" style="height:12px; vertical-align:middle;">';
+const TVE_LOGO = '<img src="TVE.png" alt="TVE" style="height:12px; vertical-align:middle;">';
+
+// ── ADMIN ───────────────────────────────────────────────
+const ADMIN_PASSWORD = 'admin2026';
+let isAdmin = false;
 
 // ── GROUPS ─────────────────────────────────────────────
 const GROUPS = {
@@ -467,6 +486,13 @@ const ALL_MATCHES = [...GROUP_MATCHES, ...KO_MATCHES];
 const ALL_BY_ID = {};
 ALL_MATCHES.forEach(m => { ALL_BY_ID[m.id] = m; });
 
+function isTVE(m) {
+  if (m.id === 1) return true; // Inaugural
+  if (m.home === 'España' || m.away === 'España') return true;
+  if (m.phase === 'Semifinales' || m.phase === 'Tercer Puesto' || m.phase === 'Final') return true;
+  return false;
+}
+
 // ── STATE ─────────────────────────────────────────────
 let results = {};
 let activeFilter = 'ALL';
@@ -474,6 +500,7 @@ let currentEditId = null;
 let isSyncing = false;
 let showFavoritesOnly = false;
 let favoriteMatches = {};
+let tveMatches = {};
 
 // ── JSONBIN CONFIG ────────────────────────────────────
 const BIN_ID  = '69e0e848aaba88219706dc21';
@@ -497,11 +524,17 @@ async function loadResults() {
     if (!res.ok) throw new Error(res.status);
     const data = await res.json();
     results = data.record || {};
+    favoriteMatches = results.favoriteMatches || JSON.parse(localStorage.getItem('mundial2026_favorites') || '{}');
+    tveMatches = results.tveMatches || JSON.parse(localStorage.getItem('mundial2026_tve') || '{}');
+    isAdmin = localStorage.getItem('admin_logged_in') === 'true';
     setSyncStatus('ok');
   } catch(e) {
     console.error('JSONBin load error:', e);
     setSyncStatus('error', 'Error al cargar — revisa tu conexión');
     results = {};
+    favoriteMatches = JSON.parse(localStorage.getItem('mundial2026_favorites') || '{}');
+    tveMatches = JSON.parse(localStorage.getItem('mundial2026_tve') || '{}');
+    isAdmin = localStorage.getItem('admin_logged_in') === 'true';
   }
 }
 
@@ -513,7 +546,7 @@ async function saveResults() {
     const res = await fetch(BIN_URL, {
       method: 'PUT',
       headers: HEADERS,
-      body: JSON.stringify(results)
+      body: JSON.stringify({ ...results, favoriteMatches, tveMatches })
     });
     if (!res.ok) throw new Error(res.status);
     setSyncStatus('ok');
@@ -748,14 +781,16 @@ function renderMatches() {
       const hScore=played?r.home:'';
       const aScore=played?r.away:'';
       const spainTime=argToSpain(m.t);
+      const isTve = isTVE(m) || tveMatches[m.id];
+      const channel = isTve ? `${DAZN_LOGO} ${TVE_LOGO}` : DAZN_LOGO;
 
       let hR, aR, canEdit;
       if (isKO) {
         hR=resolveSlot(m.hs, st, cache);
         aR=resolveSlot(m.as, st, cache);
-        canEdit = !!(hR.name && aR.name);
+        canEdit = !!(hR.name && aR.name) && isAdmin;
       } else {
-        hR={name:m.home}; aR={name:m.away}; canEdit=true;
+        hR={name:m.home}; aR={name:m.away}; canEdit=isAdmin;
       }
 
       const badgeClass = isFinal?'badge-final':isKO?'badge-ko':'badge-group';
@@ -766,9 +801,12 @@ function renderMatches() {
       const penStr = hasPen ? `<span class="pen-badge">Pen. ${r.pen1}:${r.pen2}</span>` : '';
 
       html+=`
-        <div class="match-card ${played?'played':'pending'}${isKO?' knockout':''}${isFinal?' final-match':''}" id="card-${m.id}">
-          <button class="star-btn${favoriteMatches[m.id]?' active':''}" onclick="toggleFavorite(${m.id})" title="Marcar partido favorito">${favoriteMatches[m.id]?'★':'☆'}</button>
-          <div class="match-time"><strong>${spainTime}</strong><span class="time-label">hora ESP</span></div>
+        <div class="match-card ${played?'played':'pending'}${isKO?' knockout':''}${isFinal?' final-match':''}${isAdmin?' admin':''}" id="card-${m.id}">
+          ${isAdmin ? `<div class="match-btns">
+            <button class="star-btn${favoriteMatches[m.id]?' active':''}" onclick="toggleFavorite(${m.id})" title="Marcar partido favorito">${favoriteMatches[m.id]?'★':'☆'}</button>
+            <button class="tve-btn${tveMatches[m.id]?' active':''}" onclick="toggleTVE(${m.id})" title="Marcar partido en TVE">📺</button>
+          </div>` : ''}
+          <div class="match-time"><strong>${spainTime}</strong><span class="time-label">hora ESP</span><span class="channel">${channel}</span></div>
           ${teamCellHTML(hR,'home')}
           <div class="match-score${canEdit?'':' no-click'}" ${canEdit?`onclick="openScoreModal(${m.id})"`:''}>
             <input class="score-input" type="number" value="${hScore}" min="0" max="99" placeholder="—" readonly>
@@ -795,6 +833,10 @@ function renderMatches() {
 
 // ── SCORE MODAL ───────────────────────────────────────
 function openScoreModal(id) {
+  if (!isAdmin) {
+    alert('Debes loguearte como admin para editar resultados.');
+    return;
+  }
   const st=computeStandings(), cache={};
   currentEditId=id;
   const m=ALL_BY_ID[id];
@@ -897,7 +939,9 @@ function buildFilterBar(){
     const lbl=f==='ALL'?'Todos':f==='KO'?'Eliminatorias':'Grupo '+f;
     html+=`<button class="filter-btn${f===activeFilter?' active':''}" onclick="setFilter('${f}')">${lbl}</button>`;
   });
-  html+=`<button class="filter-btn${showFavoritesOnly?' active':''}" onclick="toggleFavoriteFilter()">⭐ Favoritos</button>`;
+  if (isAdmin) {
+    html+=`<button class="filter-btn${showFavoritesOnly?' active':''}" onclick="toggleFavoriteFilter()">⭐ Favoritos</button>`;
+  }
   document.getElementById('filterBar').innerHTML=html;
 }
 function setFilter(f){activeFilter=f;buildFilterBar();renderMatches();}
@@ -908,21 +952,51 @@ function toggleFavoriteFilter(){
   renderMatches();
 }
 
-function loadFavoriteMatches(){
-  try {
-    const raw = localStorage.getItem('mundial2026_favorites');
-    favoriteMatches = raw ? JSON.parse(raw) : {};
-  } catch(e) { favoriteMatches = {}; }
-}
-
 function saveFavoriteMatches(){
   try { localStorage.setItem('mundial2026_favorites', JSON.stringify(favoriteMatches)); } catch(e) {}
 }
 
-function toggleFavorite(matchId){
+function saveTveMatches(){
+  try { localStorage.setItem('mundial2026_tve', JSON.stringify(tveMatches)); } catch(e) {}
+}
+
+async function toggleFavorite(matchId){
   favoriteMatches[matchId] = !favoriteMatches[matchId];
-  saveFavoriteMatches();
+  await saveResults();
   renderMatches();
+}
+
+async function toggleTVE(matchId){
+  tveMatches[matchId] = !tveMatches[matchId];
+  await saveResults();
+  renderMatches();
+}
+
+function handleAdmin(){
+  if (isAdmin) {
+    // logout
+    isAdmin = false;
+    localStorage.removeItem('admin_logged_in');
+    document.getElementById('adminActions').style.display = 'none';
+    document.getElementById('adminBtn').innerText = '🔐 Admin';
+    buildFilterBar();
+    renderMatches();
+    alert('Deslogueado como admin.');
+  } else {
+    // login
+    const pass = prompt('Contraseña de admin:');
+    if (pass === ADMIN_PASSWORD) {
+      isAdmin = true;
+      localStorage.setItem('admin_logged_in', 'true');
+      document.getElementById('adminActions').style.display = 'flex';
+      document.getElementById('adminBtn').innerText = '🚪 Logout';
+      buildFilterBar();
+      renderMatches();
+      alert('Logueado como admin. Ahora puedes editar resultados y marcar TVE.');
+    } else {
+      alert('Contraseña incorrecta');
+    }
+  }
 }
 
 // ── STANDINGS ─────────────────────────────────────────
@@ -1043,7 +1117,6 @@ const SEED_RESULTS = {"1":{"home":2,"away":0},"2":{"home":1,"away":1},"3":{"home
 
 // ── INIT ──────────────────────────────────────────────
 (async () => {
-  loadFavoriteMatches();
   buildFilterBar();
   renderMatches();
   updateStats();
@@ -1051,11 +1124,17 @@ const SEED_RESULTS = {"1":{"home":2,"away":0},"2":{"home":1,"away":1},"3":{"home
   // Cargar datos desde JSONBin
   await loadResults();
 
-  // Solo cargar el seed la primera vez que se usa el bin (nunca tras un reset)
-  if (!results._seeded) {
-    results = { ...SEED_RESULTS, _seeded: true };
-    await saveResults();
+  if (isAdmin) {
+    document.getElementById('adminActions').style.display = 'flex';
+    document.getElementById('adminBtn').innerText = '🚪 Logout';
+    buildFilterBar();
   }
+
+  // Solo cargar el seed la primera vez que se usa el bin (nunca tras un reset)
+  // if (!results._seeded) {
+  //   results = { ...SEED_RESULTS, _seeded: true };
+  //   await saveResults();
+  // }
 
   renderAll();
 })();
