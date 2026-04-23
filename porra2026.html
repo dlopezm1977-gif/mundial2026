@@ -196,6 +196,16 @@
     color:var(--text);font-family:'Bebas Neue',sans-serif;font-size:1.1rem;text-align:center;outline:none;transition:border-color .15s;}
   .cont-inp:focus{border-color:var(--purple);}
   .cont-inp:disabled{opacity:.5;cursor:not-allowed;}
+  .cont-info-btn{background:none;border:1px solid var(--border);border-radius:3px;color:var(--muted);
+    cursor:pointer;font-size:.65rem;padding:.1rem .35rem;margin-left:.4rem;vertical-align:middle;
+    transition:all .15s;line-height:1.2;}
+  .cont-info-btn:hover{border-color:var(--purple);color:var(--purple);}
+  .cont-info-btn.open{border-color:var(--purple);color:var(--purple);background:rgba(168,85,247,.1);}
+  .cont-teams-row td{background:rgba(168,85,247,.04);border-top:none !important;}
+  .cont-teams-panel{display:flex;flex-wrap:wrap;gap:.35rem;padding:.25rem 0;}
+  .cont-team-tag{display:inline-flex;align-items:center;gap:.3rem;background:var(--surface2);
+    border:1px solid var(--border);border-radius:4px;padding:.2rem .5rem;
+    font-size:.7rem;color:var(--text);white-space:nowrap;}
 </style>
 </head>
 <body>
@@ -605,29 +615,60 @@ function setGroupFilter(g) {
   renderMatchRows();
 }
 
+const CONT_EMOJI  = {Europa:'🏰',Asia:'🏯',América:'🗽',África:'🦁',Oceanía:'🦘'};
+const CONT_TEAMS  = {
+  Europa:  ['República Checa','Bosnia y Herzegovina','Suiza','Escocia','Turquía','Alemania',
+            'Países Bajos','Suecia','Bélgica','España','Francia','Noruega','Austria','Portugal','Inglaterra','Croacia'],
+  Asia:    ['Corea del Sur','Qatar','Japón','Irán','Arabia Saudita','Irak','Jordania','Uzbekistán'],
+  América: ['México','Canadá','Haití','Estados Unidos','Paraguay','Curazao','Ecuador',
+            'Uruguay','Argentina','Colombia','Panamá','Brasil'],
+  África:  ['Sudáfrica','Marruecos','Costa de Marfil','Túnez','Egipto','Cabo Verde','Senegal','Argelia','RD de Congo','Ghana'],
+  Oceanía: ['Australia','Nueva Zelanda']
+};
+
 function buildContinentGrid(locked) {
   const el = document.getElementById('continentGrid');
   if (!el) return;
   const entry = currentPlayer ? porrasData[currentPlayer] : null;
   const cp = entry?.continentPicks || {};
   const CONT_SHORT = ['16avos','Octavos','Cuartos','Semis','Final'];
-  const CONT_EMOJI = {Europa:'🇪🇺',Asia:'🌏',América:'🌎',África:'🌍',Oceanía:'🏝️'};
   const dis = locked ? 'disabled' : '';
   let html = `<div class="cont-grid"><table class="cont-table"><thead><tr>
     <th>Continente</th>${CONT_SHORT.map(l=>`<th>${l}</th>`).join('')}
   </tr></thead><tbody>`;
   CONTINENTS.forEach(cont => {
-    html += `<tr><td><span class="cont-name">${CONT_EMOJI[cont]||''} ${cont}<span class="cont-count">(${CONTINENT_COUNTS[cont]} eq.)</span></span></td>`;
+    const contId = cont.replace(/\s/g,'_');
+    const teamsHtml = CONT_TEAMS[cont].map(t =>
+      `<span class="cont-team-tag">${flagImg(t,14)} ${t}</span>`).join('');
+    html += `<tr>
+      <td>
+        <span class="cont-name">${CONT_EMOJI[cont]||''} ${cont}<span class="cont-count">(${CONTINENT_COUNTS[cont]} eq.)</span></span>
+        <button class="cont-info-btn" id="cib-${contId}" onclick="toggleContTeams('${contId}')" title="Ver equipos">ver</button>
+      </td>`;
     CONT_ROUNDS.forEach(round => {
       const maxVal = Math.min(CONTINENT_COUNTS[cont], ROUND_SIZES[round]);
       const val = cp[cont]?.[round] !== undefined && cp[cont][round] !== '' ? cp[cont][round] : '';
       const c = cont.replace(/'/g,"\\'"), r = round.replace(/'/g,"\\'");
       html += `<td><input class="cont-inp" type="number" min="0" max="${maxVal}" value="${val}" placeholder="—" ${dis} onchange="saveContinentPick('${c}','${r}',this.value)"></td>`;
     });
-    html += `</tr>`;
+    html += `</tr>
+    <tr class="cont-teams-row" id="ct-${contId}" style="display:none">
+      <td colspan="${CONT_ROUNDS.length + 1}">
+        <div class="cont-teams-panel">${teamsHtml}</div>
+      </td>
+    </tr>`;
   });
   html += `</tbody></table></div>`;
   el.innerHTML = html;
+}
+
+function toggleContTeams(contId) {
+  const row = document.getElementById('ct-' + contId);
+  const btn = document.getElementById('cib-' + contId);
+  if (!row) return;
+  const open = row.style.display === 'none';
+  row.style.display = open ? 'table-row' : 'none';
+  if (btn) btn.classList.toggle('open', open);
 }
 
 function saveContinentPick(cont, round, val) {
