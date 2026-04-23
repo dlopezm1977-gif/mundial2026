@@ -180,6 +180,22 @@
     border:1px solid var(--border);background:var(--surface);color:var(--muted);
     cursor:pointer;border-radius:3px;text-transform:uppercase;transition:all .15s;}
   .gf-btn:hover,.gf-btn.active{border-color:var(--accent);color:var(--accent);background:rgba(232,200,74,.07);}
+
+  /* CONTINENT GRID */
+  .cont-grid{overflow-x:auto;margin-top:.5rem;}
+  .cont-table{border-collapse:collapse;width:100%;min-width:480px;}
+  .cont-table th{font-family:'DM Mono',monospace;font-size:.58rem;color:var(--muted);text-transform:uppercase;
+    letter-spacing:.07em;padding:.5rem .6rem;border-bottom:1px solid var(--border);text-align:center;white-space:nowrap;}
+  .cont-table th:first-child{text-align:left;}
+  .cont-table td{padding:.4rem .5rem;border-bottom:1px solid rgba(31,45,74,.4);text-align:center;vertical-align:middle;}
+  .cont-table td:first-child{text-align:left;}
+  .cont-table tr:last-child td{border-bottom:none;}
+  .cont-name{font-size:.82rem;font-weight:500;white-space:nowrap;}
+  .cont-count{font-family:'DM Mono',monospace;font-size:.55rem;color:var(--muted);margin-left:.4rem;}
+  .cont-inp{width:44px;height:30px;background:var(--bg);border:1px solid var(--border);border-radius:4px;
+    color:var(--text);font-family:'Bebas Neue',sans-serif;font-size:1.1rem;text-align:center;outline:none;transition:border-color .15s;}
+  .cont-inp:focus{border-color:var(--purple);}
+  .cont-inp:disabled{opacity:.5;cursor:not-allowed;}
 </style>
 </head>
 <body>
@@ -213,6 +229,7 @@
       <div class="score-pill"><span class="pts">100</span> Ronda de ESP/FRA/ARG/BRA</div>
       <div class="score-pill"><span class="pts">150</span> Subcampeón</div>
       <div class="score-pill"><span class="pts">200</span> Campeón</div>
+      <div class="score-pill"><span class="pts">20</span> Continente × ronda</div>
     </div>
 
     <!-- Nombre -->
@@ -291,6 +308,20 @@
               </div>
             </div>
           </div>
+        </div>
+      </div>
+
+      <!-- Equipos por continente -->
+      <div class="form-section">
+        <div class="form-section-header">
+          <h3>🌍 Equipos por continente en cada ronda</h3>
+          <span style="font-size:.62rem;color:var(--accent);font-family:'DM Mono',monospace;margin-left:auto">20 pts por acierto</span>
+        </div>
+        <div class="form-section-body">
+          <p style="font-size:.75rem;color:var(--muted);margin-bottom:1rem;line-height:1.5">
+            ¿Cuántos equipos de cada continente llegarán a cada ronda eliminatoria? Introduce un número para cada combinación.
+          </p>
+          <div id="continentGrid"></div>
         </div>
       </div>
 
@@ -390,6 +421,25 @@ function flagImg(team, sz=20) {
 }
 
 const ROUNDS = ['Fase de Grupos','16avos de Final','Octavos de Final','Cuartos de Final','Semifinales','Final'];
+
+const CONTINENTS  = ['Europa','Asia','América','África','Oceanía'];
+const CONT_ROUNDS = ['16avos de Final','Octavos de Final','Cuartos de Final','Semifinales','Final'];
+const CONTINENT_COUNTS = {Europa:16, Asia:8, América:12, África:10, Oceanía:2};
+const ROUND_SIZES = {'16avos de Final':32,'Octavos de Final':16,'Cuartos de Final':8,'Semifinales':4,'Final':2};
+const TEAM_CONTINENT = {
+  'República Checa':'Europa','Bosnia y Herzegovina':'Europa','Suiza':'Europa','Escocia':'Europa',
+  'Turquía':'Europa','Alemania':'Europa','Países Bajos':'Europa','Suecia':'Europa','Bélgica':'Europa',
+  'España':'Europa','Francia':'Europa','Noruega':'Europa','Austria':'Europa','Portugal':'Europa',
+  'Inglaterra':'Europa','Croacia':'Europa',
+  'Corea del Sur':'Asia','Qatar':'Asia','Japón':'Asia','Irán':'Asia',
+  'Arabia Saudita':'Asia','Irak':'Asia','Jordania':'Asia','Uzbekistán':'Asia',
+  'México':'América','Canadá':'América','Haití':'América','Estados Unidos':'América','Paraguay':'América',
+  'Curazao':'América','Ecuador':'América','Uruguay':'América','Argentina':'América',
+  'Colombia':'América','Panamá':'América','Brasil':'América',
+  'Sudáfrica':'África','Marruecos':'África','Costa de Marfil':'África','Túnez':'África','Egipto':'África',
+  'Cabo Verde':'África','Senegal':'África','Argelia':'África','RD de Congo':'África','Ghana':'África',
+  'Australia':'Oceanía','Nueva Zelanda':'Oceanía'
+};
 
 const GROUP_MATCHES = [
   {id:1,date:'2026-06-11',group:'A',home:'México',away:'Sudáfrica'},
@@ -555,6 +605,38 @@ function setGroupFilter(g) {
   renderMatchRows();
 }
 
+function buildContinentGrid(locked) {
+  const el = document.getElementById('continentGrid');
+  if (!el) return;
+  const entry = currentPlayer ? porrasData[currentPlayer] : null;
+  const cp = entry?.continentPicks || {};
+  const CONT_SHORT = ['16avos','Octavos','Cuartos','Semis','Final'];
+  const CONT_EMOJI = {Europa:'🇪🇺',Asia:'🌏',América:'🌎',África:'🌍',Oceanía:'🏝️'};
+  const dis = locked ? 'disabled' : '';
+  let html = `<div class="cont-grid"><table class="cont-table"><thead><tr>
+    <th>Continente</th>${CONT_SHORT.map(l=>`<th>${l}</th>`).join('')}
+  </tr></thead><tbody>`;
+  CONTINENTS.forEach(cont => {
+    html += `<tr><td><span class="cont-name">${CONT_EMOJI[cont]||''} ${cont}<span class="cont-count">(${CONTINENT_COUNTS[cont]} eq.)</span></span></td>`;
+    CONT_ROUNDS.forEach(round => {
+      const maxVal = Math.min(CONTINENT_COUNTS[cont], ROUND_SIZES[round]);
+      const val = cp[cont]?.[round] !== undefined && cp[cont][round] !== '' ? cp[cont][round] : '';
+      const c = cont.replace(/'/g,"\\'"), r = round.replace(/'/g,"\\'");
+      html += `<td><input class="cont-inp" type="number" min="0" max="${maxVal}" value="${val}" placeholder="—" ${dis} onchange="saveContinentPick('${c}','${r}',this.value)"></td>`;
+    });
+    html += `</tr>`;
+  });
+  html += `</tbody></table></div>`;
+  el.innerHTML = html;
+}
+
+function saveContinentPick(cont, round, val) {
+  if (!currentPlayer || porrasData[currentPlayer]?.locked) return;
+  if (!porrasData[currentPlayer].continentPicks) porrasData[currentPlayer].continentPicks = {};
+  if (!porrasData[currentPlayer].continentPicks[cont]) porrasData[currentPlayer].continentPicks[cont] = {};
+  porrasData[currentPlayer].continentPicks[cont][round] = val === '' ? '' : parseInt(val);
+}
+
 function fmtDate(d) {
   const [,m,day] = d.split('-');
   const months=['','Ene','Feb','Mar','Abr','May','Jun','Jul','Ago','Sep','Oct','Nov','Dic'];
@@ -639,6 +721,7 @@ async function loadOrStartPorra() {
       displayName,
       picks: {}, champion: '', runnerup: '',
       big4: { España:'', Francia:'', Argentina:'', Brasil:'' },
+      continentPicks: {},
       locked: false
     };
     document.getElementById('porraStatus').textContent = `✨ Nuevo participante: ${displayName}. Rellena tus pronósticos y envía la porra.`;
@@ -712,6 +795,7 @@ function refreshFormState() {
   }
 
   renderMatchRows();
+  buildContinentGrid(locked);
 }
 
 function setSelectVal(id, val) {
@@ -999,6 +1083,26 @@ function getRunnerupOfFinal() {
   return finalMatch.home === winner ? finalMatch.away : finalMatch.home;
 }
 
+function getRoundTeamCountByContinent(round) {
+  const cache = buildKOParticipants();
+  const matchIds = KO_PHASE_MAP[round];
+  if (!matchIds) return null;
+  const teamsInRound = new Set();
+  for (const id of matchIds) {
+    const m = cache[id];
+    if (!m || !m.home || !m.away) return null;
+    teamsInRound.add(m.home);
+    teamsInRound.add(m.away);
+  }
+  const counts = {};
+  CONTINENTS.forEach(c => counts[c] = 0);
+  teamsInRound.forEach(team => {
+    const c = TEAM_CONTINENT[team];
+    if (c) counts[c]++;
+  });
+  return counts;
+}
+
 // Compute match result sign: 'H' home wins, 'D' draw, 'A' away wins, null if not played
 function matchSign(r) {
   if (!r || r.home === '' || r.home === undefined || r.away === '' || r.away === undefined) return null;
@@ -1042,6 +1146,16 @@ function scorePlayer(entry) {
     if (!picked) return;
     const actual = getTeamRound(team);
     if (picked === actual) pts += 100;
+  });
+
+  // Continent predictions: 20 pts per correct (continent, round) combination
+  CONT_ROUNDS.forEach(round => {
+    const actual = getRoundTeamCountByContinent(round);
+    if (!actual) return;
+    CONTINENTS.forEach(cont => {
+      const picked = entry.continentPicks?.[cont]?.[round];
+      if (picked !== undefined && picked !== '' && +picked === actual[cont]) pts += 20;
+    });
   });
 
   return { pts, exact, partial };
@@ -1197,6 +1311,33 @@ function showDetail(name) {
   });
 
   body += `</tbody></table></div>`;
+
+  // Continent predictions section
+  {
+    const CONT_SHORT = {'16avos de Final':'16avos','Octavos de Final':'Octavos','Cuartos de Final':'Cuartos','Semifinales':'Semis','Final':'Final'};
+    body += `<div style="margin-top:1.5rem">
+      <div style="font-family:'Bebas Neue',sans-serif;font-size:1.1rem;color:var(--purple);margin-bottom:.75rem">🌍 Equipos por continente en cada ronda</div>
+      <div style="overflow-x:auto"><table class="detail-table" style="min-width:480px">
+        <thead><tr><th>Continente</th>${CONT_ROUNDS.map(r=>`<th>${CONT_SHORT[r]}</th>`).join('')}</tr></thead>
+        <tbody>`;
+    CONTINENTS.forEach(cont => {
+      body += `<tr><td><strong>${cont}</strong></td>`;
+      CONT_ROUNDS.forEach(round => {
+        const actual = getRoundTeamCountByContinent(round);
+        const picked = entry.continentPicks?.[cont]?.[round];
+        const hasPick = picked !== undefined && picked !== '';
+        const isKnown = actual !== null;
+        const correct = isKnown && hasPick && +picked === actual[cont];
+        const cls = !isKnown ? 'pts-pending' : correct ? 'pts-exact' : 'pts-miss';
+        const ptsLabel = correct ? '+20' : isKnown ? '0' : '—';
+        body += `<td class="${cls}">${hasPick ? picked : '—'}${isKnown ? ' / '+actual[cont] : ''} <span style="font-size:.6rem;opacity:.7">${ptsLabel}</span></td>`;
+      });
+      body += `</tr>`;
+    });
+    body += `</tbody></table></div>
+      <p style="font-size:.62rem;color:var(--muted);margin-top:.5rem;font-family:'DM Mono',monospace">Formato: tu pronóstico / resultado real · verde = +20 pts</p>
+    </div>`;
+  }
 
   document.getElementById('detailTitle').textContent = `📋 Detalle de ${entry.displayName || name}`;
   document.getElementById('detailBody').innerHTML = body;
