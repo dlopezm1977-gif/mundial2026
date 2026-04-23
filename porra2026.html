@@ -206,6 +206,9 @@
   .cont-team-tag{display:inline-flex;align-items:center;gap:.3rem;background:var(--surface2);
     border:1px solid var(--border);border-radius:4px;padding:.2rem .5rem;
     font-size:.7rem;color:var(--text);white-space:nowrap;}
+  .cont-totals-row td{background:var(--surface2);border-top:2px solid var(--border) !important;padding:.5rem .5rem;}
+  .cont-total-cell{font-family:'DM Mono',monospace;font-size:.72rem;font-weight:600;text-align:center;transition:color .15s;}
+  .cont-totals-row td:first-child{font-family:'DM Mono',monospace;font-size:.6rem;color:var(--muted);text-transform:uppercase;letter-spacing:.06em;}
 </style>
 </head>
 <body>
@@ -658,8 +661,14 @@ function buildContinentGrid(locked) {
       </td>
     </tr>`;
   });
-  html += `</tbody></table></div>`;
+  html += `</tbody>
+  <tfoot><tr class="cont-totals-row">
+    <td>Total</td>
+    ${CONT_ROUNDS.map((_,i) => `<td id="ct-col-${i}" class="cont-total-cell">—</td>`).join('')}
+  </tr></tfoot>
+  </table></div>`;
   el.innerHTML = html;
+  updateRoundTotals();
 }
 
 function toggleContTeams(contId) {
@@ -676,6 +685,30 @@ function saveContinentPick(cont, round, val) {
   if (!porrasData[currentPlayer].continentPicks) porrasData[currentPlayer].continentPicks = {};
   if (!porrasData[currentPlayer].continentPicks[cont]) porrasData[currentPlayer].continentPicks[cont] = {};
   porrasData[currentPlayer].continentPicks[cont][round] = val === '' ? '' : parseInt(val);
+  updateRoundTotals();
+}
+
+function updateRoundTotals() {
+  const cp = (currentPlayer && porrasData[currentPlayer]?.continentPicks) || {};
+  CONT_ROUNDS.forEach((round, i) => {
+    const cell = document.getElementById(`ct-col-${i}`);
+    if (!cell) return;
+    const max = ROUND_SIZES[round];
+    let sum = 0, filled = 0;
+    CONTINENTS.forEach(cont => {
+      const v = cp[cont]?.[round];
+      if (v !== undefined && v !== '') { sum += +v; filled++; }
+    });
+    if (filled === 0) {
+      cell.textContent = `— / ${max}`;
+      cell.style.color = 'var(--muted)'; cell.style.fontWeight = '400';
+      return;
+    }
+    cell.textContent = `${sum} / ${max}`;
+    if (sum > max)       { cell.style.color = 'var(--red)';   cell.style.fontWeight = '700'; }
+    else if (sum === max) { cell.style.color = 'var(--green)'; cell.style.fontWeight = '600'; }
+    else                  { cell.style.color = 'var(--muted)'; cell.style.fontWeight = '400'; }
+  });
 }
 
 function fmtDate(d) {
@@ -865,6 +898,20 @@ async function submitPorra() {
   });
   if (missing.length > 0) {
     if (!confirm(`Faltan ${missing.length} resultados sin rellenar. ¿Enviar igualmente? Los que falten puntuarán 0.`)) return;
+  }
+
+  // Validar totales por ronda de continentes
+  const overLimit = CONT_ROUNDS.filter(round => {
+    const cp = entry.continentPicks || {};
+    const sum = CONTINENTS.reduce((acc, cont) => {
+      const v = cp[cont]?.[round];
+      return acc + (v !== undefined && v !== '' ? +v : 0);
+    }, 0);
+    return sum > ROUND_SIZES[round];
+  });
+  if (overLimit.length > 0) {
+    alert(`La suma de equipos supera el máximo en: ${overLimit.join(', ')}.\nRevisa los totales (fila inferior de la tabla) antes de enviar.`);
+    return;
   }
 
   if (!confirm(`¿Confirmas el envío de tu porra? Podrás editarla hasta el 10 de junio de 2026.`)) return;
