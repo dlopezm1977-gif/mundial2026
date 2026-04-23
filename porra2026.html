@@ -242,7 +242,7 @@
       <div class="score-pill"><span class="pts">100</span> Ronda de ESP/FRA/ARG/BRA</div>
       <div class="score-pill"><span class="pts">150</span> Subcampeón</div>
       <div class="score-pill"><span class="pts">200</span> Campeón</div>
-      <div class="score-pill"><span class="pts">20</span> Continente × ronda</div>
+      <div class="score-pill"><span class="pts">50</span> Continente × ronda</div>
     </div>
 
     <!-- Nombre -->
@@ -328,7 +328,7 @@
       <div class="form-section">
         <div class="form-section-header">
           <h3>🌍 Equipos por continente en cada ronda</h3>
-          <span style="font-size:.62rem;color:var(--accent);font-family:'DM Mono',monospace;margin-left:auto">20 pts por acierto</span>
+          <span style="font-size:.62rem;color:var(--accent);font-family:'DM Mono',monospace;margin-left:auto">50 pts por acierto</span>
         </div>
         <div class="form-section-body">
           <p style="font-size:.75rem;color:var(--muted);margin-bottom:1rem;line-height:1.5">
@@ -1236,13 +1236,13 @@ function scorePlayer(entry) {
     if (picked === actual) pts += 100;
   });
 
-  // Continent predictions: 20 pts per correct (continent, round) combination
+  // Continent predictions: 50 pts per correct (continent, round) combination
   CONT_ROUNDS.forEach(round => {
     const actual = getRoundTeamCountByContinent(round);
     if (!actual) return;
     CONTINENTS.forEach(cont => {
       const picked = entry.continentPicks?.[cont]?.[round];
-      if (picked !== undefined && picked !== '' && +picked === actual[cont]) pts += 20;
+      if (picked !== undefined && picked !== '' && +picked === actual[cont]) pts += 50;
     });
   });
 
@@ -1417,13 +1417,13 @@ function showDetail(name) {
         const isKnown = actual !== null;
         const correct = isKnown && hasPick && +picked === actual[cont];
         const cls = !isKnown ? 'pts-pending' : correct ? 'pts-exact' : 'pts-miss';
-        const ptsLabel = correct ? '+20' : isKnown ? '0' : '—';
+        const ptsLabel = correct ? '+50' : isKnown ? '0' : '—';
         body += `<td class="${cls}">${hasPick ? picked : '—'}${isKnown ? ' / '+actual[cont] : ''} <span style="font-size:.6rem;opacity:.7">${ptsLabel}</span></td>`;
       });
       body += `</tr>`;
     });
     body += `</tbody></table></div>
-      <p style="font-size:.62rem;color:var(--muted);margin-top:.5rem;font-family:'DM Mono',monospace">Formato: tu pronóstico / resultado real · verde = +20 pts</p>
+      <p style="font-size:.62rem;color:var(--muted);margin-top:.5rem;font-family:'DM Mono',monospace">Formato: tu pronóstico / resultado real · verde = +50 pts</p>
     </div>`;
   }
 
