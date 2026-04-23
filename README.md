@@ -4,11 +4,11 @@ Aplicación web completa para seguir el Mundial de Fútbol 2026 y gestionar porr
 
 ---
 
-## Aplicaciones
+## 📋 Aplicaciones
 
 El proyecto tiene dos ficheros HTML independientes que comparten datos en tiempo real:
 
-### `index.html` — Seguimiento de partidos
+### 🏆 `index.html` — Seguimiento de partidos
 
 Pantalla principal del torneo. Muestra los **104 partidos** (72 de grupos + 32 de eliminatorias) organizados por fase y fecha, con horarios en hora España.
 
@@ -25,7 +25,7 @@ Pantalla principal del torneo. Muestra los **104 partidos** (72 de grupos + 32 d
 - **Exportar/importar CSV**: backup completo de resultados
 - **Sincronización**: estado visible en pantalla (cargando / sincronizado / error); fallback a localStorage sin conexión
 
-### `porra2026.html` — Sistema de predicciones
+### 🎯 `porra2026.html` — Sistema de predicciones
 
 Permite a cada participante crear su propia porra y competir en un leaderboard colectivo.
 
@@ -39,7 +39,7 @@ Permite a cada participante crear su propia porra y competir en un leaderboard c
 
 ---
 
-## Sistema de puntuación (porra)
+## 🏅 Sistema de puntuación (porra)
 
 | Pronóstico | Puntos |
 |---|---|
@@ -53,7 +53,7 @@ Permite a cada participante crear su propia porra y competir en un leaderboard c
 
 ---
 
-## Estructura del torneo
+## 🏟️ Estructura del torneo
 
 - **48 equipos** en **12 grupos** (A–L), 4 por grupo
 - **72 partidos** de fase de grupos
@@ -61,7 +61,7 @@ Permite a cada participante crear su propia porra y competir en un leaderboard c
 - **Sedes**: Estados Unidos, México y Canadá
 - **Fechas**: 11 de junio – 19 de julio de 2026
 
-### Grupos
+### 🌍 Grupos
 
 | Grupo | Equipos |
 |---|---|
@@ -80,7 +80,7 @@ Permite a cada participante crear su propia porra y competir en un leaderboard c
 
 ---
 
-## Sistema de admin
+## 🔐 Sistema de admin
 
 Contraseña: `admin2026`
 
@@ -95,7 +95,7 @@ Los usuarios sin login pueden ver resultados, clasificaciones, estadísticas y f
 
 ---
 
-## Cómo usar
+## 🚀 Cómo usar
 
 ```bash
 # Opción A: abrir directamente en el navegador
@@ -109,7 +109,7 @@ python -m http.server 8000
 
 ---
 
-## Tecnologías
+## 🛠️ Tecnologías
 
 | | |
 |---|---|
@@ -122,7 +122,7 @@ python -m http.server 8000
 
 ---
 
-## Configuración (JSONBin)
+## 🔧 Configuración (JSONBin)
 
 Los datos se sincronizan en dos bins separados:
 
@@ -135,7 +135,7 @@ La API key está configurada directamente en el código de cada fichero HTML.
 
 ---
 
-## Estructura de datos
+## 📊 Estructura de datos
 
 ### Resultados (`index.html`)
 
@@ -173,7 +173,7 @@ La API key está configurada directamente en el código de cada fichero HTML.
 
 ---
 
-## Compatibilidad
+## 📱 Compatibilidad
 
 - Navegadores modernos: Chrome, Firefox, Safari, Edge
 - Dispositivos: desktop, tablet y móvil
