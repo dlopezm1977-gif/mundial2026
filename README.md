@@ -31,9 +31,11 @@ Permite a cada participante crear su propia porra y competir en un leaderboard c
 
 **Funcionalidades:**
 
-- **Predicciones**: 72 resultados de fase de grupos + 4 pronósticos especiales (campeón, subcampeón, ronda máxima de España/Francia/Argentina/Brasil)
+- **Predicciones de grupos**: 72 resultados de fase de grupos con filtro por grupo
+- **Pronósticos especiales**: campeón (200 pts), subcampeón (150 pts) y ronda máxima del Big 4 — España, Francia, Argentina y Brasil — (100 pts c/u)
+- **Predicción de continentes**: nuevo juego donde se predice cuántos equipos de cada continente llegarán a cada ronda eliminatoria (50 pts por acierto exacto)
 - **Leaderboard en tiempo real**: ranking con medallas para los tres primeros, columnas de exactos / parciales / especiales / total
-- **Detalle de porra**: al hacer clic en cualquier participante se abre un modal con los 72 partidos, comparando su pronóstico con el resultado real y los puntos obtenidos
+- **Detalle de porra**: al hacer clic en cualquier participante se abre un modal con los 72 partidos y los pronósticos especiales, comparando pronóstico con resultado real y puntos obtenidos
 - **Bloqueo automático**: la porra se bloquea al enviar; se puede desbloquear y editar hasta el **10 de junio de 2026 a las 23:59 (hora España)**; después queda bloqueada definitivamente
 - **Sincronización multiusuario**: varios participantes pueden rellenar su porra a la vez sin conflictos
 
@@ -41,15 +43,35 @@ Permite a cada participante crear su propia porra y competir en un leaderboard c
 
 ## 🏅 Sistema de puntuación (porra)
 
+### Partidos de grupos
+
 | Pronóstico | Puntos |
 |---|---|
 | Resultado exacto (goles) | 25 |
 | Ganador correcto o empate | 10 |
 | Resultado incorrecto | 0 |
-| **Especiales** | |
+
+### Especiales
+
+| Pronóstico | Puntos |
+|---|---|
 | Campeón correcto | 200 |
 | Subcampeón correcto | 150 |
-| Ronda máxima de cada Big 4 correcta | 100 c/u |
+| Ronda máxima correcta (por cada equipo del Big 4) | 100 |
+
+### Predicción de continentes
+
+Se predice cuántos equipos de cada continente llegan a cada ronda eliminatoria. **50 puntos** por cada combinación continente/ronda acertada exactamente.
+
+| Continente | Equipos | Icono |
+|---|---|---|
+| 🏰 Europa | 16 | República Checa, Bosnia y Herzegovina, Suiza, Escocia, Turquía, Alemania, Países Bajos, Suecia, Bélgica, España, Francia, Noruega, Austria, Portugal, Inglaterra, Croacia |
+| 🏯 Asia | 8 | Corea del Sur, Qatar, Japón, Irán, Arabia Saudita, Irak, Jordania, Uzbekistán |
+| 🗽 América | 12 | México, Canadá, Haití, Estados Unidos, Paraguay, Curazao, Ecuador, Uruguay, Argentina, Colombia, Panamá, Brasil |
+| 🦁 África | 10 | Sudáfrica, Marruecos, Costa de Marfil, Túnez, Egipto, Cabo Verde, Senegal, Argelia, RD de Congo, Ghana |
+| 🦘 Oceanía | 2 | Australia, Nueva Zelanda |
+
+**Máximos por ronda**: 16avos=32, Octavos=16, Cuartos=8, Semifinales=4, Final=2. La tabla muestra la suma actual por ronda en tiempo real (verde = exacto, rojo = excedido). No se puede enviar la porra si alguna ronda supera su máximo.
 
 ---
 
@@ -165,6 +187,13 @@ La API key está configurada directamente en el código de cada fichero HTML.
       "Francia": "Semifinales",
       "Argentina": "Final",
       "Brasil": "Campeón"
+    },
+    "continentPicks": {
+      "Europa":  { "16avos de Final": 12, "Octavos de Final": 6, "Cuartos de Final": 3, "Semifinales": 2, "Final": 1 },
+      "Asia":    { "16avos de Final": 5,  "Octavos de Final": 3, "Cuartos de Final": 1, "Semifinales": 0, "Final": 0 },
+      "América": { "16avos de Final": 10, "Octavos de Final": 5, "Cuartos de Final": 3, "Semifinales": 2, "Final": 1 },
+      "África":  { "16avos de Final": 4,  "Octavos de Final": 2, "Cuartos de Final": 1, "Semifinales": 0, "Final": 0 },
+      "Oceanía": { "16avos de Final": 1,  "Octavos de Final": 0, "Cuartos de Final": 0, "Semifinales": 0, "Final": 0 }
     },
     "locked": true
   }
