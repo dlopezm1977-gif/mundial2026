@@ -2,6 +2,10 @@
 
 Aplicación web completa para seguir el Mundial de Fútbol 2026 y gestionar porras entre amigos. Sin frameworks, sin backend propio: HTML, CSS y JavaScript vanilla con sincronización en la nube vía JSONBin.
 
+**🌐 Acceso público (GitHub Pages):**
+- Seguimiento: https://dlopezm1977-gif.github.io/mundial2026/index.html
+- Porra: https://dlopezm1977-gif.github.io/mundial2026/porra2026.html
+
 ---
 
 ## 📋 Aplicaciones
@@ -24,6 +28,7 @@ Pantalla principal del torneo. Muestra los **104 partidos** (72 de grupos + 32 d
 - **Filtros**: por grupo, por fase (grupos / KO) o solo favoritos
 - **Exportar/importar CSV**: backup completo de resultados
 - **Sincronización**: estado visible en pantalla (cargando / sincronizado / error); fallback a localStorage sin conexión
+- **Diseño responsive**: optimizado para móvil con breakpoints a 680 px y 480 px
 
 ### 🎯 `porra2026.html` — Sistema de predicciones
 
@@ -33,11 +38,18 @@ Permite a cada participante crear su propia porra y competir en un leaderboard c
 
 - **Predicciones de grupos**: 72 resultados de fase de grupos con filtro por grupo
 - **Pronósticos especiales**: campeón (200 pts), subcampeón (150 pts) y ronda máxima del Big 4 — España, Francia, Argentina y Brasil — (100 pts c/u)
-- **Predicción de continentes**: nuevo juego donde se predice cuántos equipos de cada continente llegarán a cada ronda eliminatoria (50 pts por acierto exacto)
-- **Leaderboard en tiempo real**: ranking con medallas para los tres primeros, columnas de exactos / parciales / especiales / total
-- **Detalle de porra**: al hacer clic en cualquier participante se abre un modal con los 72 partidos y los pronósticos especiales, comparando pronóstico con resultado real y puntos obtenidos
+- **Predicción de continentes**: se predice cuántos equipos de cada continente llegarán a cada ronda eliminatoria (50 pts por acierto exacto)
 - **Bloqueo automático**: la porra se bloquea al enviar; se puede desbloquear y editar hasta el **10 de junio de 2026 a las 23:59 (hora España)**; después queda bloqueada definitivamente
 - **Sincronización multiusuario**: varios participantes pueden rellenar su porra a la vez sin conflictos
+- **Diseño responsive**: optimizado para móvil, incluyendo el formulario de nombre y la clasificación
+
+**Pestaña Clasificación:**
+
+- **Banner "Rey del día"**: siempre visible en la cabecera, muestra quién sumó más puntos en la última jornada con resultados
+- **Sub-pestaña General**: ranking completo con posición, nombre, exactos, especiales y total; medallas 🥇🥈🥉 para el top 3
+- **Sub-pestaña Por jornada**: tabla histórica con el top 3 de cada día jugado
+- **Sub-pestaña Evolución**: gráfica de líneas (Chart.js) con la evolución de puntos acumulados por jugador a lo largo del torneo; leyenda interactiva para ocultar/mostrar participantes
+- **Detalle de porra**: clic en cualquier participante abre un modal con los 72 partidos y los pronósticos especiales comparados con el resultado real
 
 ---
 
@@ -119,14 +131,20 @@ Los usuarios sin login pueden ver resultados, clasificaciones, estadísticas y f
 
 ## 🚀 Cómo usar
 
-```bash
-# Opción A: abrir directamente en el navegador
-index.html         # seguimiento del torneo
-porra2026.html     # predicciones
+### Acceso público
 
-# Opción B: servidor local (mejor experiencia)
+Las dos páginas están desplegadas en GitHub Pages y accesibles desde cualquier dispositivo sin instalación:
+
+- https://dlopezm1977-gif.github.io/mundial2026/index.html
+- https://dlopezm1977-gif.github.io/mundial2026/porra2026.html
+
+### Desarrollo local
+
+```bash
+# Servidor local (necesario para que funcione la API de JSONBin)
 python -m http.server 8000
-# → http://localhost:8000
+# → http://localhost:8000/index.html
+# → http://localhost:8000/porra2026.html
 ```
 
 ---
@@ -136,11 +154,13 @@ python -m http.server 8000
 | | |
 |---|---|
 | Frontend | HTML5 + CSS3 + JavaScript ES6+ (sin frameworks) |
+| Gráficas | Chart.js 4.4 (CDN) |
 | Almacenamiento compartido | JSONBin (API REST) |
 | Persistencia local | localStorage (fallback offline) |
 | Banderas | FlagCDN |
 | Fuentes | Google Fonts — Bebas Neue, DM Sans, DM Mono |
-| Diseño | Tema oscuro, gradientes sutiles, responsive |
+| Diseño | Tema oscuro, gradientes sutiles, responsive (480 px / 680 px) |
+| Despliegue | GitHub Pages |
 
 ---
 
@@ -202,11 +222,23 @@ La API key está configurada directamente en el código de cada fichero HTML.
 
 ---
 
+## 📁 Ficheros del proyecto
+
+| Fichero | Descripción |
+|---|---|
+| `index.html` | Seguimiento de partidos y clasificaciones de grupo |
+| `porra2026.html` | Sistema de predicciones y leaderboard |
+| `mensajes_whatsapp.txt` | Mensajes listos para compartir la porra por WhatsApp |
+| `DAZN.png` | Logo DAZN (usado en los match cards) |
+| `TVE.png` | Logo TVE (usado en los match cards) |
+
+---
+
 ## 📱 Compatibilidad
 
-- Navegadores modernos: Chrome, Firefox, Safari, Edge
-- Dispositivos: desktop, tablet y móvil
-- Requiere conexión a internet para sincronización entre usuarios
+- **Navegadores**: Chrome, Firefox, Safari, Edge (versiones modernas)
+- **Dispositivos**: desktop, tablet y móvil — diseño responsive con breakpoints a 680 px y 480 px
+- **Requiere** conexión a internet para sincronización entre usuarios; sin conexión funciona en modo local (localStorage)
 
 ---
 
