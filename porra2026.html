@@ -61,10 +61,33 @@
   .btn:disabled{opacity:.35;cursor:not-allowed;}
 
   /* SCORING LEGEND */
-  .scoring-legend{display:flex;gap:.4rem;flex-wrap:wrap;margin-bottom:2rem;}
+  .scoring-legend{display:flex;gap:.4rem;flex-wrap:wrap;margin-bottom:.75rem;}
   .score-pill{background:var(--surface);border:1px solid var(--border);border-radius:20px;
     padding:.35rem .7rem;font-size:.68rem;display:flex;align-items:center;gap:.35rem;}
   .score-pill .pts{font-family:'Bebas Neue',sans-serif;font-size:1.1rem;color:var(--accent);}
+
+  /* RULES ACCORDION */
+  .rules-toggle{display:flex;align-items:center;gap:.4rem;background:none;border:none;
+    color:var(--muted);font-family:'DM Mono',monospace;font-size:.63rem;letter-spacing:.06em;
+    text-transform:uppercase;cursor:pointer;padding:.2rem 0;margin-bottom:1.5rem;transition:color .15s;}
+  .rules-toggle:hover{color:var(--accent);}
+  .rules-toggle .arrow{display:inline-block;transition:transform .2s;font-size:.7rem;}
+  .rules-toggle.open .arrow{transform:rotate(90deg);}
+  .rules-panel{display:none;background:var(--surface);border:1px solid var(--border);
+    border-radius:10px;padding:1.4rem 1.5rem;margin-bottom:1.75rem;line-height:1.6;}
+  .rules-panel.open{display:block;}
+  .rules-section{margin-bottom:1.1rem;}
+  .rules-section:last-child{margin-bottom:0;}
+  .rules-section h4{font-family:'DM Mono',monospace;font-size:.62rem;text-transform:uppercase;
+    letter-spacing:.1em;color:var(--accent);margin-bottom:.5rem;}
+  .rules-table{width:100%;border-collapse:collapse;font-size:.78rem;}
+  .rules-table td{padding:.35rem .5rem;border-bottom:1px solid rgba(31,45,74,.4);}
+  .rules-table tr:last-child td{border-bottom:none;}
+  .rules-table td:first-child{color:var(--muted);width:40%;}
+  .rules-table td:last-child{font-family:'Bebas Neue',sans-serif;font-size:1rem;
+    color:var(--accent);text-align:right;width:20%;white-space:nowrap;}
+  .rules-note{font-size:.72rem;color:var(--muted);margin-top:.5rem;line-height:1.5;
+    border-left:2px solid var(--border);padding-left:.75rem;}
 
   /* FORM SECTIONS */
   .form-section{background:var(--surface);border:1px solid var(--border);border-radius:10px;
@@ -312,6 +335,55 @@
       <div class="score-pill"><span class="pts">150</span> Subcampeón</div>
       <div class="score-pill"><span class="pts">200</span> Campeón</div>
       <div class="score-pill"><span class="pts">50</span> Continente × ronda</div>
+    </div>
+
+    <!-- Normas completas (acordeón) -->
+    <button class="rules-toggle" id="rulesToggle" onclick="toggleRules()">
+      <span class="arrow">▶</span> Ver normas completas
+    </button>
+    <div class="rules-panel" id="rulesPanel">
+
+      <div class="rules-section">
+        <h4>⚽ Fase de grupos — 72 partidos</h4>
+        <table class="rules-table">
+          <tr><td>Resultado exacto (ej. 2-1)</td><td></td><td>25 pts</td></tr>
+          <tr><td>Ganador correcto o empate correcto</td><td></td><td>10 pts</td></tr>
+          <tr><td>Resultado incorrecto</td><td></td><td>0 pts</td></tr>
+        </table>
+        <p class="rules-note">Se puntúan los 72 partidos de la fase de grupos (del 11 al 27 de junio). Los partidos de eliminatorias no puntúan en esta categoría.</p>
+      </div>
+
+      <div class="rules-section">
+        <h4>🏆 Especiales</h4>
+        <table class="rules-table">
+          <tr><td>Campeón del Mundial</td><td></td><td>200 pts</td></tr>
+          <tr><td>Subcampeón (finalista perdedor)</td><td></td><td>150 pts</td></tr>
+          <tr><td>Ronda máxima correcta — España 🇪🇸</td><td></td><td>100 pts</td></tr>
+          <tr><td>Ronda máxima correcta — Francia 🇫🇷</td><td></td><td>100 pts</td></tr>
+          <tr><td>Ronda máxima correcta — Argentina 🇦🇷</td><td></td><td>100 pts</td></tr>
+          <tr><td>Ronda máxima correcta — Brasil 🇧🇷</td><td></td><td>100 pts</td></tr>
+        </table>
+        <p class="rules-note">Para el Big 4 debes predecir hasta qué ronda llega cada equipo: Fase de Grupos · 16avos · Octavos · Cuartos · Semifinales · Final · Campeón. Solo puntúa si aciertas la ronda exacta.</p>
+      </div>
+
+      <div class="rules-section">
+        <h4>🌍 Predicción de continentes</h4>
+        <table class="rules-table">
+          <tr><td>Cada combinación continente/ronda acertada exactamente</td><td></td><td>50 pts</td></tr>
+        </table>
+        <p class="rules-note">Se predice cuántos equipos de cada continente (Europa, América, Asia, África, Oceanía) pasan a cada ronda eliminatoria (16avos, Octavos, Cuartos, Semis y Final). Hay un máximo de equipos por ronda que no se puede superar: 32 en 16avos, 16 en Octavos, 8 en Cuartos, 4 en Semis y 2 en la Final.</p>
+      </div>
+
+      <div class="rules-section">
+        <h4>📅 Fecha límite y condiciones</h4>
+        <p class="rules-note" style="border-left-color:var(--accent);color:var(--text)">
+          ⏰ <strong>Puedes editar tu porra hasta el 10 de junio de 2026 a las 23:59 (hora España)</strong>, fecha en que arranca el Mundial. Después queda bloqueada definitivamente.<br><br>
+          🔒 Al pulsar "Enviar mi porra" queda guardada en la nube. Puedes volver a editarla cuantas veces quieras antes del cierre usando el botón "Desbloquear para editar".<br><br>
+          👤 Cada participante tiene su propia porra identificada por su nombre. El leaderboard es público y cualquiera puede ver el detalle de la porra de otro.<br><br>
+          💰 La porra es completamente gratuita. No hay bote económico, solo la gloria de ser el mejor pronosticador del grupo.
+        </p>
+      </div>
+
     </div>
 
     <!-- Nombre -->
@@ -1745,6 +1817,16 @@ function renderEvolutionChart() {
     });
     legendEl.appendChild(item);
   });
+}
+
+// ══════════════════════════════════════════════════════
+// RULES ACCORDION
+// ══════════════════════════════════════════════════════
+function toggleRules() {
+  const btn = document.getElementById('rulesToggle');
+  const panel = document.getElementById('rulesPanel');
+  const open = panel.classList.toggle('open');
+  btn.classList.toggle('open', open);
 }
 
 // ══════════════════════════════════════════════════════
