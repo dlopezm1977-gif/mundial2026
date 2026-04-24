@@ -5,6 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>🎯 Porra Mundial 2026</title>
 <link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=DM+Sans:wght@300;400;500;600&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet">
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.4/dist/chart.umd.min.js"></script>
 <style>
   :root{
     --bg:#0a0e1a; --surface:#111827; --surface2:#1a2236; --border:#1f2d4a;
@@ -38,6 +39,16 @@
   .section{display:none;}
   .section.active{display:block;}
 
+  /* SUB-TABS */
+  .sub-tabs{display:flex;gap:.25rem;margin-bottom:1.5rem;border-bottom:1px solid var(--border);padding-bottom:0;}
+  .sub-tab{font-family:'DM Mono',monospace;font-size:.65rem;letter-spacing:.08em;text-transform:uppercase;
+    padding:.55rem 1rem;cursor:pointer;border:none;background:none;color:var(--muted);
+    border-bottom:2px solid transparent;margin-bottom:-1px;transition:all .15s;white-space:nowrap;border-radius:0;}
+  .sub-tab:hover{color:var(--text);}
+  .sub-tab.active{color:var(--accent);border-bottom-color:var(--accent);}
+  .sub-section{display:none;}
+  .sub-section.active{display:block;}
+
   /* BUTTONS */
   .btn{font-family:'DM Mono',monospace;font-size:.7rem;letter-spacing:.05em;padding:.45rem .9rem;
     border:1px solid var(--border);background:var(--surface);color:var(--text);cursor:pointer;
@@ -65,13 +76,18 @@
   .form-section-body{padding:1.2rem;}
 
   /* NAME INPUT */
-  .name-row{display:flex;gap:.75rem;align-items:center;margin-bottom:1.5rem;}
+  .name-row{display:flex;flex-direction:column;gap:.5rem;margin-bottom:1.5rem;}
   .name-row label{font-size:.72rem;color:var(--muted);text-transform:uppercase;
-    letter-spacing:.08em;white-space:nowrap;font-family:'DM Mono',monospace;}
-  .name-input{flex:1;background:var(--surface2);border:1px solid var(--border);border-radius:6px;
+    letter-spacing:.08em;font-family:'DM Mono',monospace;}
+  .name-row-fields{display:flex;gap:.75rem;align-items:center;}
+  .name-input{flex:1;min-width:0;background:var(--surface2);border:1px solid var(--border);border-radius:6px;
     padding:.6rem .9rem;color:var(--text);font-family:'DM Sans',sans-serif;font-size:.95rem;outline:none;}
   .name-input:focus{border-color:var(--accent);}
   .name-input:disabled{opacity:.5;cursor:not-allowed;}
+  @media(max-width:480px){
+    .name-row-fields{flex-direction:column;align-items:stretch;}
+    .name-row-fields .btn{width:100%;justify-content:center;}
+  }
 
   /* MATCH ROWS */
   .match-rows{display:flex;flex-direction:column;gap:.4rem;}
@@ -209,6 +225,44 @@
   .cont-totals-row td{background:var(--surface2);border-top:2px solid var(--border) !important;padding:.5rem .5rem;}
   .cont-total-cell{font-family:'DM Mono',monospace;font-size:.72rem;font-weight:600;text-align:center;transition:color .15s;}
   .cont-totals-row td:first-child{font-family:'DM Mono',monospace;font-size:.6rem;color:var(--muted);text-transform:uppercase;letter-spacing:.06em;}
+
+  /* DAILY LEADERS */
+  .daily-banner{background:var(--surface);border:1px solid rgba(232,200,74,.3);border-radius:10px;
+    padding:1.2rem 1.5rem;margin-bottom:1rem;display:flex;align-items:center;gap:1rem;}
+  .daily-banner-crown{font-size:2rem;line-height:1;}
+  .daily-banner-info{flex:1;}
+  .daily-banner-title{font-family:'DM Mono',monospace;font-size:.6rem;color:var(--muted);
+    text-transform:uppercase;letter-spacing:.08em;margin-bottom:.25rem;}
+  .daily-banner-name{font-family:'Bebas Neue',sans-serif;font-size:1.4rem;color:var(--accent);}
+  .daily-banner-pts{font-family:'Bebas Neue',sans-serif;font-size:2.2rem;color:var(--accent);line-height:1;}
+  .daily-banner-ptslbl{font-family:'DM Mono',monospace;font-size:.55rem;color:var(--muted);
+    text-transform:uppercase;letter-spacing:.07em;}
+  .daily-table-wrap{overflow-x:auto;}
+  .daily-table{width:100%;border-collapse:collapse;font-size:.78rem;}
+  .daily-table th{font-family:'DM Mono',monospace;font-size:.55rem;color:var(--muted);
+    text-transform:uppercase;letter-spacing:.07em;padding:.4rem .75rem;
+    border-bottom:1px solid var(--border);text-align:left;}
+  .daily-table td{padding:.5rem .75rem;border-bottom:1px solid rgba(31,45,74,.4);vertical-align:middle;}
+  .daily-table tr:last-child td{border-bottom:none;}
+  .daily-date{font-family:'DM Mono',monospace;font-size:.7rem;color:var(--muted);white-space:nowrap;}
+  .daily-podium{display:flex;flex-direction:column;gap:.25rem;}
+  .daily-entry{display:flex;align-items:center;gap:.5rem;font-size:.76rem;}
+  .daily-medal{font-size:.85rem;width:1.3rem;text-align:center;flex-shrink:0;}
+  .daily-ename{flex:1;font-weight:500;}
+  .daily-epts{font-family:'Bebas Neue',sans-serif;font-size:1rem;color:var(--accent);}
+
+  /* EVOLUTION CHART */
+  .evo-section{background:var(--surface);border:1px solid var(--border);border-radius:10px;
+    padding:1.25rem 1.5rem;}
+  .evo-section-title{font-family:'DM Mono',monospace;font-size:.6rem;color:var(--muted);
+    text-transform:uppercase;letter-spacing:.08em;margin-bottom:.85rem;}
+  .evo-canvas-wrap{position:relative;height:280px;}
+  .evo-legend{display:flex;flex-wrap:wrap;gap:.4rem .65rem;margin-top:.85rem;}
+  .evo-legend-item{display:flex;align-items:center;gap:.35rem;font-size:.72rem;cursor:pointer;
+    padding:.2rem .45rem;border-radius:4px;border:1px solid transparent;transition:all .15s;user-select:none;}
+  .evo-legend-item:hover{background:var(--surface2);}
+  .evo-legend-item.hidden{opacity:.3;}
+  .evo-dot{width:10px;height:10px;border-radius:50%;flex-shrink:0;}
 </style>
 </head>
 <body>
@@ -254,8 +308,10 @@
       <div class="form-section-body">
         <div class="name-row">
           <label>Nombre o alias</label>
-          <input type="text" id="playerName" class="name-input" placeholder="Escribe tu nombre…" maxlength="30">
-          <button class="btn btn-accent" id="loadBtn" onclick="loadOrStartPorra()">Cargar / Nuevo</button>
+          <div class="name-row-fields">
+            <input type="text" id="playerName" class="name-input" placeholder="Escribe tu nombre…" maxlength="30">
+            <button class="btn btn-accent" id="loadBtn" onclick="loadOrStartPorra()">Cargar / Nuevo</button>
+          </div>
         </div>
         <div id="porraStatus" style="font-size:.75rem;color:var(--muted)"></div>
       </div>
@@ -364,8 +420,22 @@
 
   <!-- ══ CLASIFICACIÓN ══ -->
   <div class="section" id="sec-clasificacion">
-    <div id="leaderboardContainer">
-      <p style="color:var(--muted);font-size:.85rem;padding:2rem 0">Cargando clasificación…</p>
+    <div id="dailyBannerContainer"></div>
+    <div class="sub-tabs">
+      <button class="sub-tab active" onclick="switchSubTab('general')">General</button>
+      <button class="sub-tab" onclick="switchSubTab('jornadas')">Por jornada</button>
+      <button class="sub-tab" onclick="switchSubTab('evolucion')">Evolución</button>
+    </div>
+    <div class="sub-section active" id="sub-general">
+      <div id="leaderboardContainer">
+        <p style="color:var(--muted);font-size:.85rem;padding:2rem 0">Cargando clasificación…</p>
+      </div>
+    </div>
+    <div class="sub-section" id="sub-jornadas">
+      <div id="dailySection"></div>
+    </div>
+    <div class="sub-section" id="sub-evolucion">
+      <div id="evolutionSection"></div>
     </div>
   </div>
 
@@ -587,7 +657,10 @@ async function savePorras() {
 async function forceSyncFromRemote() {
   await loadAll();
   if (currentPlayer) refreshFormState();
-  if (document.getElementById('sec-clasificacion').classList.contains('active')) renderLeaderboard();
+  if (document.getElementById('sec-clasificacion').classList.contains('active')) {
+    renderDailyBanner();
+    renderLeaderboard();
+  }
 }
 
 // ══════════════════════════════════════════════════════
@@ -1434,15 +1507,259 @@ function showDetail(name) {
 function closeDetail() { document.getElementById('detailModal').classList.remove('open'); }
 
 // ══════════════════════════════════════════════════════
+// DAILY LEADERS & EVOLUTION CHART
+// ══════════════════════════════════════════════════════
+
+const CHART_COLORS = [
+  '#e8c84a','#3b82f6','#22c55e','#a855f7','#ef4444',
+  '#f97316','#06b6d4','#ec4899','#84cc16','#f59e0b'
+];
+
+function getMatchesByDate() {
+  const byDate = {};
+  GROUP_MATCHES.forEach(m => {
+    if (!byDate[m.date]) byDate[m.date] = [];
+    byDate[m.date].push(m);
+  });
+  return byDate;
+}
+
+function getPointsForMatchEntry(entry, match) {
+  const real = masterData[match.id];
+  const pick = entry.picks?.[match.id];
+  if (!real || real.home === undefined || real.home === '' || real.away === '') return 0;
+  if (!pick || pick.h === '' || pick.h === undefined || pick.a === '' || pick.a === undefined) return 0;
+  const realSign = matchSign(real);
+  const pickSign = matchSign({home: pick.h, away: pick.a});
+  if (+pick.h === +real.home && +pick.a === +real.away) return 25;
+  if (realSign && pickSign && realSign === pickSign) return 10;
+  return 0;
+}
+
+function getDatesWithResults() {
+  const byDate = getMatchesByDate();
+  return Object.keys(byDate).sort().filter(date =>
+    byDate[date].some(m => {
+      const r = masterData[m.id];
+      return r && r.home !== undefined && r.home !== '' && r.away !== '';
+    })
+  );
+}
+
+function getDailyLeaders() {
+  const byDate = getMatchesByDate();
+  const datesWithResults = getDatesWithResults();
+  const players = Object.entries(porrasData).filter(([k]) => k !== '_seeded');
+
+  return datesWithResults.map(date => {
+    const matches = byDate[date];
+    const dayScores = players
+      .map(([key, entry]) => ({
+        key,
+        name: entry.displayName || key,
+        pts: matches.reduce((sum, m) => sum + getPointsForMatchEntry(entry, m), 0)
+      }))
+      .sort((a, b) => b.pts - a.pts);
+    return { date, top3: dayScores.slice(0, 3) };
+  });
+}
+
+function fmtDateLong(d) {
+  const [, m, day] = d.split('-');
+  const months = ['','Ene','Feb','Mar','Abr','May','Jun','Jul','Ago','Sep','Oct','Nov','Dic'];
+  return `${parseInt(day)} ${months[parseInt(m)]}`;
+}
+
+let evoChart = null;
+const hiddenDatasets = new Set();
+
+function renderDailyBanner() {
+  const container = document.getElementById('dailyBannerContainer');
+  const dailyLeaders = getDailyLeaders();
+  if (dailyLeaders.length === 0) { container.innerHTML = ''; return; }
+  const latest = dailyLeaders[dailyLeaders.length - 1];
+  const leader = latest.top3[0];
+  container.innerHTML = `
+    <div class="daily-banner" style="margin-bottom:1.25rem">
+      <div class="daily-banner-crown">👑</div>
+      <div class="daily-banner-info">
+        <div class="daily-banner-title">Rey del ${fmtDateLong(latest.date)}</div>
+        <div class="daily-banner-name">${leader.name}</div>
+      </div>
+      <div style="text-align:right">
+        <div class="daily-banner-pts">${leader.pts}</div>
+        <div class="daily-banner-ptslbl">pts ese día</div>
+      </div>
+    </div>`;
+}
+
+function renderDailySection() {
+  const container = document.getElementById('dailySection');
+  const dailyLeaders = getDailyLeaders();
+
+  if (dailyLeaders.length === 0) {
+    container.innerHTML = `<p style="color:var(--muted);font-size:.85rem;padding:2rem 0">Aún no hay jornadas con resultados.</p>`;
+    return;
+  }
+
+  const medals = ['🥇','🥈','🥉'];
+
+  let html = `
+    <div class="daily-table-wrap">
+      <table class="daily-table">
+        <thead><tr><th>Fecha</th><th>Top 3 del día</th></tr></thead>
+        <tbody>`;
+
+  [...dailyLeaders].reverse().forEach(({date, top3}) => {
+    html += `<tr>
+      <td><div class="daily-date">${fmtDateLong(date)}</div></td>
+      <td><div class="daily-podium">`;
+    top3.forEach((e, i) => {
+      html += `<div class="daily-entry">
+        <span class="daily-medal">${medals[i]}</span>
+        <span class="daily-ename">${e.name}</span>
+        <span class="daily-epts">${e.pts} pts</span>
+      </div>`;
+    });
+    html += `</div></td></tr>`;
+  });
+
+  html += `</tbody></table></div>`;
+  container.innerHTML = html;
+}
+
+function renderEvolutionChart() {
+  const container = document.getElementById('evolutionSection');
+  const byDate = getMatchesByDate();
+  const datesWithResults = getDatesWithResults();
+
+  if (datesWithResults.length === 0) { container.innerHTML = ''; return; }
+
+  const players = Object.entries(porrasData)
+    .filter(([k]) => k !== '_seeded')
+    .map(([key, entry]) => {
+      const { pts } = scorePlayer(entry);
+      return { key, name: entry.displayName || key, pts, entry };
+    })
+    .sort((a, b) => b.pts - a.pts);
+
+  if (players.length === 0) { container.innerHTML = ''; return; }
+
+  const datasets = players.map((p, i) => {
+    let cumulative = 0;
+    const data = datesWithResults.map(date => {
+      cumulative += byDate[date].reduce((sum, m) => sum + getPointsForMatchEntry(p.entry, m), 0);
+      return cumulative;
+    });
+    return {
+      label: p.name,
+      data,
+      borderColor: CHART_COLORS[i % CHART_COLORS.length],
+      backgroundColor: 'transparent',
+      borderWidth: 2,
+      pointRadius: 3,
+      pointHoverRadius: 5,
+      tension: 0.3,
+    };
+  });
+
+  container.innerHTML = `
+    <div class="evo-section">
+      <div class="evo-section-title">Evolución de puntos · Fase de grupos</div>
+      <div class="evo-canvas-wrap"><canvas id="evoCanvas"></canvas></div>
+      <div class="evo-legend" id="evoLegend"></div>
+    </div>`;
+
+  if (evoChart) { evoChart.destroy(); evoChart = null; }
+  hiddenDatasets.clear();
+
+  const ctx = document.getElementById('evoCanvas').getContext('2d');
+  evoChart = new Chart(ctx, {
+    type: 'line',
+    data: { labels: datesWithResults.map(fmtDateLong), datasets },
+    options: {
+      responsive: true,
+      maintainAspectRatio: false,
+      interaction: { mode: 'index', intersect: false },
+      plugins: {
+        legend: { display: false },
+        tooltip: {
+          backgroundColor: 'rgba(17,24,39,.95)',
+          borderColor: 'rgba(31,45,74,1)',
+          borderWidth: 1,
+          titleColor: '#64748b',
+          bodyColor: '#e2e8f0',
+          titleFont: { family: 'DM Mono', size: 10 },
+          bodyFont: { family: 'DM Sans', size: 12 },
+          callbacks: {
+            label: ctx => ` ${ctx.dataset.label}: ${ctx.parsed.y} pts`
+          }
+        }
+      },
+      scales: {
+        x: {
+          grid: { color: 'rgba(31,45,74,.5)' },
+          ticks: { color: '#64748b', font: { family: 'DM Mono', size: 9 }, maxRotation: 45 }
+        },
+        y: {
+          grid: { color: 'rgba(31,45,74,.5)' },
+          ticks: { color: '#64748b', font: { family: 'DM Mono', size: 9 } },
+          beginAtZero: true
+        }
+      }
+    }
+  });
+
+  const legendEl = document.getElementById('evoLegend');
+  datasets.forEach((ds, i) => {
+    const item = document.createElement('div');
+    item.className = 'evo-legend-item';
+    item.innerHTML = `<div class="evo-dot" style="background:${ds.borderColor}"></div><span>${ds.label}</span>`;
+    item.addEventListener('click', () => {
+      const meta = evoChart.getDatasetMeta(i);
+      if (hiddenDatasets.has(i)) {
+        hiddenDatasets.delete(i);
+        meta.hidden = false;
+        item.classList.remove('hidden');
+      } else {
+        hiddenDatasets.add(i);
+        meta.hidden = true;
+        item.classList.add('hidden');
+      }
+      evoChart.update();
+    });
+    legendEl.appendChild(item);
+  });
+}
+
+// ══════════════════════════════════════════════════════
 // TABS
 // ══════════════════════════════════════════════════════
+let activeSubTab = 'general';
+
+function switchSubTab(tab) {
+  activeSubTab = tab;
+  document.querySelectorAll('.sub-tab').forEach(t => {
+    t.classList.toggle('active', t.getAttribute('onclick').includes(`'${tab}'`));
+  });
+  document.querySelectorAll('.sub-section').forEach(s => s.classList.remove('active'));
+  document.getElementById('sub-' + tab).classList.add('active');
+  if (tab === 'jornadas') renderDailySection();
+  if (tab === 'evolucion') renderEvolutionChart();
+}
+
 function switchTab(tab) {
   document.querySelectorAll('.tab').forEach((t,i) => {
     t.classList.toggle('active', ['mi-porra','clasificacion'][i] === tab);
   });
   document.querySelectorAll('.section').forEach(s => s.classList.remove('active'));
   document.getElementById('sec-'+tab).classList.add('active');
-  if (tab === 'clasificacion') renderLeaderboard();
+  if (tab === 'clasificacion') {
+    renderDailyBanner();
+    renderLeaderboard();
+    if (activeSubTab === 'jornadas') renderDailySection();
+    if (activeSubTab === 'evolucion') renderEvolutionChart();
+  }
 }
 
 // ══════════════════════════════════════════════════════

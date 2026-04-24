@@ -176,6 +176,39 @@
     .standings-grid{grid-template-columns:1fr;}
     header h1{font-size:1.85rem;}
   }
+  @media(max-width:480px){
+    /* Match cards */
+    .match-card{grid-template-columns:42px 1fr 86px 1fr 22px;}
+    .match-card.admin{grid-template-columns:30px 42px 1fr 86px 1fr 22px;}
+    .match-info{display:none;}
+    .match-time{font-size:.78rem;padding:.5rem .35rem;}
+    .match-time .time-label{font-size:.44rem;}
+    .match-team{padding:.45rem .3rem;font-size:.66rem;gap:.2rem;min-width:0;}
+    .match-team span{white-space:nowrap;overflow:hidden;text-overflow:ellipsis;display:block;min-width:0;}
+    .match-team .ph{max-width:65px;}
+    .match-btns{padding:0 2px;}
+    .star-btn,.tve-btn{width:18px;font-size:.7rem;}
+    .score-input{width:29px;height:27px;font-size:1.05rem;}
+    .match-save{padding:.3rem;}
+    .save-btn{width:16px;height:16px;font-size:.56rem;}
+    /* Score modal */
+    .modal{padding:1.2rem;width:96%;}
+    .modal-match-display{gap:.5rem;}
+    .modal-score-inp{width:48px;height:48px;font-size:2rem;}
+    .modal-team{font-size:.78rem;}
+    /* Standings: hide GF y GC, solo queda DG */
+    .standings-table th:nth-child(6),
+    .standings-table td:nth-child(6),
+    .standings-table th:nth-child(7),
+    .standings-table td:nth-child(7){display:none;}
+    .standings-table th{padding:.32rem .28rem;font-size:.5rem;}
+    .standings-table td{padding:.42rem .28rem;font-size:.68rem;}
+    .standings-table th:first-child{padding-left:.5rem;}
+    .standings-table td:first-child{padding-left:.5rem;}
+    .team-name-cell{gap:.28rem;}
+    .team-name-cell span{white-space:nowrap;overflow:hidden;text-overflow:ellipsis;
+      display:block;max-width:90px;}
+  }
 </style>
 </head>
 <body>
