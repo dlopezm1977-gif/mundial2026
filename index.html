@@ -103,7 +103,11 @@
   .save-btn.saved{border-color:var(--green);color:var(--green);background:rgba(34,197,94,.1);}
   .save-btn.disabled{opacity:.25;cursor:default;pointer-events:none;}
   /* FILTER */
-  .filter-bar{display:flex;gap:.4rem;margin-bottom:1.2rem;flex-wrap:wrap;align-items:center;}
+  .filter-bar{display:flex;gap:.4rem;margin-bottom:.6rem;flex-wrap:wrap;align-items:center;}
+  .date-filter-bar{display:flex;gap:.4rem;margin-bottom:1.2rem;align-items:center;overflow-x:auto;flex-wrap:nowrap;padding-bottom:3px;scrollbar-width:thin;scrollbar-color:var(--border) transparent;}
+  .date-filter-bar::-webkit-scrollbar{height:3px;}
+  .date-filter-bar::-webkit-scrollbar-thumb{background:var(--border);border-radius:2px;}
+  .filter-btn.today{border-color:var(--accent2);color:var(--accent2);}
   .filter-label{font-size:.6rem;color:var(--muted);text-transform:uppercase;letter-spacing:.1em;margin-right:.25rem;}
   .filter-btn{font-family:'DM Mono',monospace;font-size:.6rem;padding:.26rem .62rem;
     border:1px solid var(--border);background:var(--surface);color:var(--muted);
@@ -241,6 +245,7 @@
   <div class="section active" id="sec-partidos">
     <div class="stats-bar" id="statsBar"></div>
     <div class="filter-bar" id="filterBar"></div>
+    <div class="date-filter-bar" id="dateFilterBar"></div>
     <div class="matches-list" id="matchesList"></div>
   </div>
   <div class="section" id="sec-clasificacion">
@@ -331,8 +336,8 @@ function flag(team, sz=24) {
 }
 
 // ── LOGOS ──────────────────────────────────────────────
-const DAZN_LOGO = '<img src="DAZN.png" alt="DAZN" style="height:12px; vertical-align:middle;">';
-const TVE_LOGO = '<img src="TVE.png" alt="TVE" style="height:12px; vertical-align:middle;">';
+const DAZN_LOGO = '<img src="assets/img/DAZN.png" alt="DAZN" style="height:12px; vertical-align:middle;">';
+const TVE_LOGO = '<img src="assets/img/TVE.png" alt="TVE" style="height:12px; vertical-align:middle;">';
 
 // ── ADMIN ───────────────────────────────────────────────
 const ADMIN_PASSWORD = 'admin2026';
@@ -529,6 +534,8 @@ function isTVE(m) {
 // ── STATE ─────────────────────────────────────────────
 let results = {};
 let activeFilter = 'ALL';
+let activeDateFilter = null;
+let datesExpanded = false;
 let currentEditId = null;
 let isSyncing = false;
 let showFavoritesOnly = false;
@@ -774,6 +781,7 @@ function renderMatches() {
   else if (activeFilter==='KO') filtered = KO_MATCHES;
   else filtered = GROUP_MATCHES.filter(m=>m.group===activeFilter);
 
+  if (activeDateFilter) filtered = filtered.filter(m => m.date === activeDateFilter);
   if (showFavoritesOnly) filtered = filtered.filter(m => favoriteMatches[m.id]);
 
   // Bucket by phase+date
@@ -976,8 +984,34 @@ function buildFilterBar(){
     html+=`<button class="filter-btn${showFavoritesOnly?' active':''}" onclick="toggleFavoriteFilter()">⭐ Favoritos</button>`;
   }
   document.getElementById('filterBar').innerHTML=html;
+  buildDateFilterBar();
 }
 function setFilter(f){activeFilter=f;buildFilterBar();renderMatches();}
+
+function formatDateShort(dateStr) {
+  const [,, mm, dd] = dateStr.match(/(\d{4})-(\d{2})-(\d{2})/);
+  const months = ['','ene','feb','mar','abr','may','jun','jul','ago','sep','oct','nov','dic'];
+  return `${parseInt(dd)} ${months[parseInt(mm)]}`;
+}
+
+function buildDateFilterBar() {
+  const today = new Date().toISOString().slice(0,10);
+  const dates = [...new Set(ALL_MATCHES.map(m => m.date))].sort();
+  let html = '<span class="filter-label">Día:</span>';
+  html += `<button class="filter-btn${!activeDateFilter?' active':''}" onclick="setDateFilter(null)">Todos</button>`;
+  html += `<button class="filter-btn today${activeDateFilter===today?' active':''}" onclick="setDateFilter('${today}')">Hoy</button>`;
+  html += `<button class="filter-btn date-toggle" onclick="toggleDates()">${datesExpanded?'▲':'▼'} Fechas</button>`;
+  if (datesExpanded) {
+    dates.forEach(d => {
+      const isToday = d === today;
+      html += `<button class="filter-btn${isToday?' today':''}${d===activeDateFilter?' active':''}" onclick="setDateFilter('${d}')">${formatDateShort(d)}</button>`;
+    });
+  }
+  document.getElementById('dateFilterBar').innerHTML = html;
+}
+
+function setDateFilter(d) { activeDateFilter = d; buildDateFilterBar(); renderMatches(); }
+function toggleDates() { datesExpanded = !datesExpanded; buildDateFilterBar(); }
 
 function toggleFavoriteFilter(){
   showFavoritesOnly = !showFavoritesOnly;

@@ -537,6 +537,18 @@
   </div>
 </div>
 
+<div class="modal-overlay" id="confirmIdentityModal">
+  <div class="modal" style="max-width:400px;text-align:center">
+    <h3>¿Eres tú?</h3>
+    <p>Ya existe una porra a nombre de <strong id="confirmModalName"></strong>.</p>
+    <p style="color:var(--muted);font-size:.85rem;margin-top:.5rem">Si eres tú, carga tu porra. Si no, elige otro nombre para no machacar la de otra persona.</p>
+    <div style="display:flex;gap:.75rem;justify-content:center;margin-top:1.25rem;flex-wrap:wrap">
+      <button class="btn btn-accent" onclick="confirmIdentity()">✅ Sí, soy yo — cargar mi porra</button>
+      <button class="btn" style="border-color:var(--muted);color:var(--muted)" onclick="denyIdentity()">✏️ No, usar otro nombre</button>
+    </div>
+  </div>
+</div>
+
 <script>
 // ══════════════════════════════════════════════════════
 // CONFIG
@@ -945,23 +957,43 @@ async function loadOrStartPorra() {
   const displayName = name.trim();           // nombre para mostrar
 
   if (porrasData[currentPlayer]) {
-    // Participante existente — cargar sus datos
-    document.getElementById('porraStatus').textContent = porrasData[currentPlayer].locked
-      ? `🔒 Porra de ${porrasData[currentPlayer].displayName || displayName} cargada — ya enviada y bloqueada.`
-      : `📝 Porra de ${porrasData[currentPlayer].displayName || displayName} cargada — pendiente de enviar.`;
-  } else {
-    // Nuevo participante
-    porrasData[currentPlayer] = {
-      displayName,
-      picks: {}, champion: '', runnerup: '',
-      big4: { España:'', Francia:'', Argentina:'', Brasil:'' },
-      continentPicks: {},
-      locked: false
-    };
-    document.getElementById('porraStatus').textContent = `✨ Nuevo participante: ${displayName}. Rellena tus pronósticos y envía la porra.`;
-    await savePorras(); // reservar el nombre en remoto inmediatamente
+    // Nombre existente — pedir confirmación antes de cargar
+    const stored = porrasData[currentPlayer];
+    document.getElementById('confirmModalName').textContent = stored.displayName || displayName;
+    document.getElementById('confirmIdentityModal').classList.add('open');
+    return;
   }
 
+  // Nuevo participante
+  porrasData[currentPlayer] = {
+    displayName,
+    picks: {}, champion: '', runnerup: '',
+    big4: { España:'', Francia:'', Argentina:'', Brasil:'' },
+    continentPicks: {},
+    locked: false
+  };
+  document.getElementById('porraStatus').textContent = `✨ Nuevo participante: ${displayName}. Rellena tus pronósticos y envía la porra.`;
+  await savePorras(); // reservar el nombre en remoto inmediatamente
+
+  _openPorraForm();
+}
+
+function confirmIdentity() {
+  document.getElementById('confirmIdentityModal').classList.remove('open');
+  const stored = porrasData[currentPlayer];
+  document.getElementById('porraStatus').textContent = stored.locked
+    ? `🔒 Porra de ${stored.displayName || currentPlayer} cargada — ya enviada y bloqueada.`
+    : `📝 Porra de ${stored.displayName || currentPlayer} cargada — pendiente de enviar.`;
+  _openPorraForm();
+}
+
+function denyIdentity() {
+  document.getElementById('confirmIdentityModal').classList.remove('open');
+  currentPlayer = null;
+  // El campo nombre queda editable para que el usuario cambie el nombre
+}
+
+function _openPorraForm() {
   refreshFormState();
   document.getElementById('porraForm').style.display = 'block';
   document.getElementById('playerName').disabled = true;
@@ -1258,6 +1290,19 @@ function buildKOParticipants() {
       .sort((a,b) => b.pts-a.pts || b.dg-a.dg || b.gf-a.gf || a.name.localeCompare(b.name));
   }
 
+  function isGroupComplete(g) {
+    return GROUP_MATCHES
+      .filter(m => m.group === g)
+      .every(m => {
+        const r = masterData[m.id];
+        return r && r.home !== '' && r.home !== undefined && r.away !== '' && r.away !== undefined;
+      });
+  }
+
+  function allGroupsComplete() {
+    return Object.keys(GROUPS_DEF).every(g => isGroupComplete(g));
+  }
+
   function getBestThirds() {
     return Object.keys(GROUPS_DEF)
       .map(g => { const s = sortedGroup(g); return s.length >= 3 ? {...s[2], group:g} : null; })
@@ -1268,10 +1313,12 @@ function buildKOParticipants() {
 
   function resolveTeam(slot) {
     if (slot.t === 'g') {
+      if (!isGroupComplete(slot.g)) return null;
       const sorted = sortedGroup(slot.g);
       return sorted[slot.p - 1]?.name || null;
     }
     if (slot.t === 'th') {
+      if (!allGroupsComplete()) return null;
       const best = getBestThirds();
       const eligible = best.filter(t => slot.pools.includes(t.group));
       return eligible[0]?.name || null;
