@@ -23,9 +23,8 @@ Pantalla principal del torneo. Muestra los **104 partidos** (72 de grupos + 32 d
 - **Clasificación de grupos**: se calcula automáticamente con criterios de desempate (puntos, diferencia de goles, goles a favor)
 - **Resolución de slots KO**: algoritmo que asigna los 8 mejores terceros clasificados a sus cruces correctos
 - **Logos de canales**: DAZN aparece siempre; TVE se marca automáticamente en el partido inaugural, todos los partidos de España, y las semifinales/final/tercer puesto (el admin puede marcarlo en cualquier otro partido)
-- **Favoritos**: el admin puede marcar partidos con ⭐ y filtrar por ellos
 - **Estadísticas**: partidos jugados, goles totales, media por partido, progreso del torneo
-- **Filtros**: por grupo, por fase (grupos / KO) o solo favoritos
+- **Filtros**: por grupo, por fase (grupos / KO), por fecha o solo partidos en TVE (disponible para todos los usuarios)
 - **Exportar/importar CSV**: backup completo de resultados
 - **Sincronización**: estado visible en pantalla (cargando / sincronizado / error); fallback a localStorage sin conexión
 - **Diseño responsive**: optimizado para móvil con breakpoints a 680 px y 480 px
@@ -120,12 +119,11 @@ Contraseña: `admin2026`
 
 Con sesión de admin activa se habilitan:
 - Editar resultados (clic en el marcador de cualquier partido)
-- Marcar/desmarcar favoritos (⭐)
-- Marcar/desmarcar emisión en TVE (📺)
+- Marcar/desmarcar emisión en TVE (📺) en partidos no detectados automáticamente
 - Exportar e importar datos en CSV
 - Resetear todos los datos
 
-Los usuarios sin login pueden ver resultados, clasificaciones, estadísticas y filtros, pero no modificar nada.
+Los usuarios sin login pueden ver resultados, clasificaciones, estadísticas y todos los filtros (incluyendo el filtro 📺 TVE), pero no modificar nada.
 
 ---
 
@@ -170,7 +168,7 @@ Los datos se sincronizan en dos bins separados:
 
 | | Bin ID |
 |---|---|
-| Resultados, favoritos y TVE | `69e0e848aaba88219706dc21` |
+| Resultados y TVE manual | `69e0e848aaba88219706dc21` |
 | Porras de todos los usuarios | `69e107f9aaba882197079212` |
 
 La API key está configurada directamente en el código de cada fichero HTML.
@@ -185,7 +183,6 @@ La API key está configurada directamente en el código de cada fichero HTML.
 {
   "1": { "home": 2, "away": 0 },
   "2": { "home": 1, "away": 1, "pen1": 4, "pen2": 3 },
-  "favoriteMatches": { "1": true },
   "tveMatches": { "3": true }
 }
 ```

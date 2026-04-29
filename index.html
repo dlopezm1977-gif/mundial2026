@@ -65,8 +65,6 @@
     display:grid;grid-template-columns:64px 70px 1fr 128px 1fr 92px 28px;
     align-items:center;overflow:hidden;transition:border-color .15s;}
   .match-card.played{border-left:3px solid var(--green);}
-  .star-btn{width:30px;height:15px;border:none;background:transparent;color:var(--muted);font-size:.8rem;cursor:pointer;transition:color .15s;}
-  .star-btn.active{color:var(--accent);}
   .tve-btn{width:30px;height:15px;border:none;background:transparent;color:var(--muted);font-size:.8rem;cursor:pointer;transition:color .15s;}
   .tve-btn.active{color:#e53e3e;}
   .match-btns{display:flex;flex-direction:column;gap:2px;align-items:center;justify-content:center;}
@@ -191,7 +189,7 @@
     .match-team span{white-space:nowrap;overflow:hidden;text-overflow:ellipsis;display:block;min-width:0;}
     .match-team .ph{max-width:65px;}
     .match-btns{padding:0 2px;}
-    .star-btn,.tve-btn{width:18px;font-size:.7rem;}
+    .tve-btn{width:18px;font-size:.7rem;}
     .score-input{width:29px;height:27px;font-size:1.05rem;}
     .match-save{padding:.3rem;}
     .save-btn{width:16px;height:16px;font-size:.56rem;}
@@ -538,9 +536,9 @@ let activeDateFilter = null;
 let datesExpanded = false;
 let currentEditId = null;
 let isSyncing = false;
-let showFavoritesOnly = false;
 let favoriteMatches = {};
 let tveMatches = {};
+let showTveOnly = false;
 
 // ── JSONBIN CONFIG ────────────────────────────────────
 const BIN_ID  = '69e0e848aaba88219706dc21';
@@ -782,7 +780,7 @@ function renderMatches() {
   else filtered = GROUP_MATCHES.filter(m=>m.group===activeFilter);
 
   if (activeDateFilter) filtered = filtered.filter(m => m.date === activeDateFilter);
-  if (showFavoritesOnly) filtered = filtered.filter(m => favoriteMatches[m.id]);
+  if (showTveOnly) filtered = filtered.filter(m => isTVE(m) || tveMatches[m.id]);
 
   // Bucket by phase+date
   const buckets = {};
@@ -844,7 +842,6 @@ function renderMatches() {
       html+=`
         <div class="match-card ${played?'played':'pending'}${isKO?' knockout':''}${isFinal?' final-match':''}${isAdmin?' admin':''}" id="card-${m.id}">
           ${isAdmin ? `<div class="match-btns">
-            <button class="star-btn${favoriteMatches[m.id]?' active':''}" onclick="toggleFavorite(${m.id})" title="Marcar partido favorito">${favoriteMatches[m.id]?'★':'☆'}</button>
             <button class="tve-btn${tveMatches[m.id]?' active':''}" onclick="toggleTVE(${m.id})" title="Marcar partido en TVE">📺</button>
           </div>` : ''}
           <div class="match-time"><strong>${spainTime}</strong><span class="time-label">hora ESP</span><span class="channel">${channel}</span></div>
@@ -980,9 +977,7 @@ function buildFilterBar(){
     const lbl=f==='ALL'?'Todos':f==='KO'?'Eliminatorias':'Grupo '+f;
     html+=`<button class="filter-btn${f===activeFilter?' active':''}" onclick="setFilter('${f}')">${lbl}</button>`;
   });
-  if (isAdmin) {
-    html+=`<button class="filter-btn${showFavoritesOnly?' active':''}" onclick="toggleFavoriteFilter()">⭐ Favoritos</button>`;
-  }
+  html+=`<button class="filter-btn${showTveOnly?' active':''}" onclick="toggleTveFilter()">📺 TVE</button>`;
   document.getElementById('filterBar').innerHTML=html;
   buildDateFilterBar();
 }
@@ -1013,24 +1008,14 @@ function buildDateFilterBar() {
 function setDateFilter(d) { activeDateFilter = d; buildDateFilterBar(); renderMatches(); }
 function toggleDates() { datesExpanded = !datesExpanded; buildDateFilterBar(); }
 
-function toggleFavoriteFilter(){
-  showFavoritesOnly = !showFavoritesOnly;
+function toggleTveFilter(){
+  showTveOnly = !showTveOnly;
   buildFilterBar();
   renderMatches();
 }
 
-function saveFavoriteMatches(){
-  try { localStorage.setItem('mundial2026_favorites', JSON.stringify(favoriteMatches)); } catch(e) {}
-}
-
 function saveTveMatches(){
   try { localStorage.setItem('mundial2026_tve', JSON.stringify(tveMatches)); } catch(e) {}
-}
-
-async function toggleFavorite(matchId){
-  favoriteMatches[matchId] = !favoriteMatches[matchId];
-  await saveResults();
-  renderMatches();
 }
 
 async function toggleTVE(matchId){
