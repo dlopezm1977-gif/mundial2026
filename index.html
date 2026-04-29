@@ -45,6 +45,14 @@
   .stat-card{background:var(--surface);border:1px solid var(--border);border-radius:6px;padding:.8rem 1.2rem;flex:1;min-width:110px;}
   .stat-card .val{font-family:'Bebas Neue',sans-serif;font-size:1.9rem;color:var(--accent);line-height:1;}
   .stat-card .lbl{font-size:.6rem;color:var(--muted);text-transform:uppercase;letter-spacing:.1em;margin-top:.2rem;}
+  .progress-track{background:var(--border);border-radius:3px;height:5px;margin-top:.6rem;overflow:hidden;}
+  .progress-fill{height:100%;border-radius:3px;background:var(--accent);transition:width .4s ease;}
+  .stat-card.countdown{min-width:200px;}
+  .countdown-units{display:flex;align-items:flex-end;gap:.2rem;margin-top:.3rem;}
+  .countdown-unit{display:flex;flex-direction:column;align-items:center;min-width:28px;}
+  .countdown-val{font-family:'Bebas Neue',sans-serif;font-size:1.55rem;color:var(--accent);line-height:1;}
+  .countdown-sub{font-size:.48rem;color:var(--muted);text-transform:uppercase;letter-spacing:.06em;margin-top:.1rem;}
+  .countdown-sep{font-family:'DM Mono',monospace;font-size:1.2rem;color:var(--border);line-height:1;padding-bottom:.3rem;}
   /* PHASE HEADER */
   .phase-header{display:flex;align-items:center;gap:.75rem;margin:2rem 0 .6rem;
     font-family:'Bebas Neue',sans-serif;font-size:1.35rem;letter-spacing:.08em;color:var(--accent2);}
@@ -529,8 +537,12 @@ function isTVE(m) {
   return false;
 }
 
+// ── CONSTANTS ─────────────────────────────────────────
+const KICKOFF = new Date('2026-06-11T19:00:00Z'); // partido inaugural: 21:00 hora España (CEST)
+
 // ── STATE ─────────────────────────────────────────────
 let results = {};
+let countdownInterval = null;
 let activeFilter = 'ALL';
 let activeDateFilter = null;
 let datesExpanded = false;
@@ -961,12 +973,39 @@ function updateStats(){
     return(r&&isPlayed(m.id))?acc+(+r.home)+(+r.away):acc;
   },0);
   const avg=played>0?(goals/played).toFixed(1):'—';
+  const pad=n=>String(n).padStart(2,'0');
+
+  let lastCard;
+  const now=new Date();
+  if(now<KICKOFF){
+    const diff=KICKOFF-now;
+    const d=Math.floor(diff/86400000);
+    const h=Math.floor((diff%86400000)/3600000);
+    const min=Math.floor((diff%3600000)/60000);
+    const sec=Math.floor((diff%60000)/1000);
+    lastCard=`<div class="stat-card countdown">
+      <div class="lbl">Arranca en</div>
+      <div class="countdown-units">
+        <div class="countdown-unit"><span class="countdown-val">${d}</span><span class="countdown-sub">días</span></div>
+        <div class="countdown-sep">:</div>
+        <div class="countdown-unit"><span class="countdown-val">${pad(h)}</span><span class="countdown-sub">horas</span></div>
+        <div class="countdown-sep">:</div>
+        <div class="countdown-unit"><span class="countdown-val">${pad(min)}</span><span class="countdown-sub">min</span></div>
+        <div class="countdown-sep">:</div>
+        <div class="countdown-unit"><span class="countdown-val">${pad(sec)}</span><span class="countdown-sub">seg</span></div>
+      </div>
+    </div>`;
+  } else {
+    const pct=Math.round(played/total*100);
+    lastCard=`<div class="stat-card"><div class="val">${pct}%</div><div class="lbl">Progreso</div><div class="progress-track"><div class="progress-fill" style="width:${pct}%"></div></div></div>`;
+  }
+
   document.getElementById('statsBar').innerHTML=`
     <div class="stat-card"><div class="val">${played}</div><div class="lbl">Partidos jugados</div></div>
     <div class="stat-card"><div class="val">${total-played}</div><div class="lbl">Pendientes</div></div>
     <div class="stat-card"><div class="val">${goals}</div><div class="lbl">Goles totales</div></div>
     <div class="stat-card"><div class="val">${avg}</div><div class="lbl">Media goles/ptdo</div></div>
-    <div class="stat-card"><div class="val">${Math.round(played/total*100)}%</div><div class="lbl">Progreso</div></div>`;
+    ${lastCard}`;
 }
 
 // ── FILTER BAR ────────────────────────────────────────
@@ -1189,6 +1228,13 @@ const SEED_RESULTS = {"1":{"home":2,"away":0},"2":{"home":1,"away":1},"3":{"home
   // }
 
   renderAll();
+
+  if(new Date()<KICKOFF){
+    countdownInterval=setInterval(()=>{
+      if(new Date()>=KICKOFF){clearInterval(countdownInterval);countdownInterval=null;}
+      updateStats();
+    },1000);
+  }
 })();
 </script>
 </body>

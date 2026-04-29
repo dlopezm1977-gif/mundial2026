@@ -23,7 +23,7 @@ Pantalla principal del torneo. Muestra los **104 partidos** (72 de grupos + 32 d
 - **Clasificación de grupos**: se calcula automáticamente con criterios de desempate (puntos, diferencia de goles, goles a favor)
 - **Resolución de slots KO**: algoritmo que asigna los 8 mejores terceros clasificados a sus cruces correctos
 - **Logos de canales**: DAZN aparece siempre; TVE se marca automáticamente en el partido inaugural, todos los partidos de España, y las semifinales/final/tercer puesto (el admin puede marcarlo en cualquier otro partido)
-- **Estadísticas**: partidos jugados, goles totales, media por partido, progreso del torneo
+- **Estadísticas**: partidos jugados, goles totales, media por partido y una tarjeta de progreso con barra visual; antes del inicio del torneo esa tarjeta muestra una cuenta atrás en directo (días, horas, minutos y segundos) hasta el partido inaugural
 - **Filtros**: por grupo, por fase (grupos / KO), por fecha o solo partidos en TVE (disponible para todos los usuarios)
 - **Exportar/importar CSV**: backup completo de resultados
 - **Sincronización**: estado visible en pantalla (cargando / sincronizado / error); fallback a localStorage sin conexión
