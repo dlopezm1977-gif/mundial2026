@@ -304,10 +304,7 @@
     cursor:pointer;border-radius:20px;transition:all .15s;white-space:nowrap;}
   .lb-gf-btn:hover{border-color:var(--accent2);color:var(--text);}
   .lb-gf-btn.active{background:var(--accent2);border-color:var(--accent2);color:#fff;font-weight:600;}
-  .gf-manage-btn{background:none;border:1px solid rgba(31,45,74,.7);color:var(--muted);cursor:pointer;
-    font-size:.62rem;padding:.3rem .6rem;border-radius:20px;transition:all .15s;margin-left:.25rem;
-    font-family:'DM Mono',monospace;letter-spacing:.05em;text-transform:uppercase;white-space:nowrap;}
-  .gf-manage-btn:hover{border-color:var(--accent);color:var(--accent);}
+
   /* ADMIN GRUPOS */
   .ga-table{width:100%;border-collapse:collapse;margin-top:.5rem;}
   .ga-table th{text-align:left;padding:.4rem .6rem;font-size:.62rem;color:var(--muted);
@@ -348,6 +345,10 @@
     <span id="syncStatus">🔄 Cargando…</span>
     <button class="btn" onclick="forceSyncFromRemote()">↺ Actualizar</button>
     <a href="index.html" class="btn" style="text-decoration:none" title="Volver a resultados">⚽ Resultados</a>
+    <span id="adminActions" style="display:none">
+      <button class="btn" onclick="openGroupAdmin()">👥 Gestionar grupos</button>
+    </span>
+    <button class="btn" id="adminBtn" onclick="handleAdmin()">🔐 Admin</button>
   </div>
 </header>
 
@@ -594,11 +595,8 @@
 <!-- MODAL GESTIÓN DE GRUPOS -->
 <div class="modal-overlay" id="groupAdminModal">
   <div class="modal" style="max-width:520px">
-    <div style="display:flex;align-items:center;gap:.75rem;margin-bottom:1rem;flex-wrap:wrap">
-      <h3 style="margin:0;flex:1">👥 Gestionar grupos</h3>
-      <button class="btn" style="font-size:.62rem;border-color:var(--red);color:var(--red);padding:.3rem .65rem" onclick="logoutGroupAdmin()" title="Cerrar sesión de administrador">🔒 Cerrar sesión admin</button>
-      <button class="modal-close" style="position:static;margin:0" onclick="closeGroupAdmin()">✕</button>
-    </div>
+    <button class="modal-close" onclick="closeGroupAdmin()">✕ Cerrar</button>
+    <h3>👥 Gestionar grupos</h3>
     <p style="font-size:.75rem;color:var(--muted);margin-bottom:1rem">Asigna un grupo a cada participante. Deja en blanco para no asignar grupo.</p>
     <div id="groupAdminBody"></div>
     <div style="display:flex;gap:.75rem;justify-content:flex-end;margin-top:1.25rem;flex-wrap:wrap">
@@ -1952,13 +1950,7 @@ function renderGroupFilter() {
   const container = document.getElementById('groupFilterContainer');
   if (!container) return;
   const groups = getGroupNames();
-  const hasPlayers = Object.keys(porrasData).filter(k => k !== '_seeded').length > 0;
-  if (groups.length === 0) {
-    container.innerHTML = hasPlayers
-      ? `<div class="lb-group-filter"><button class="gf-manage-btn" onclick="openGroupAdmin()">⚙️ Gestionar grupos</button></div>`
-      : '';
-    return;
-  }
+  if (groups.length === 0) { container.innerHTML = ''; return; }
 
   let html = `<div class="lb-group-filter">
     <button class="lb-gf-btn${activeLeaderboardGroup===''?' active':''}" onclick="setLeaderboardGroup('')">🌐 Global</button>`;
@@ -1966,7 +1958,6 @@ function renderGroupFilter() {
     const safe = g.replace(/'/g,"\\'");
     html += `<button class="lb-gf-btn${activeLeaderboardGroup===g?' active':''}" onclick="setLeaderboardGroup('${safe}')">👥 ${g}</button>`;
   });
-  html += `<button class="gf-manage-btn" onclick="openGroupAdmin()">⚙️ Gestionar</button>`;
   html += `</div>`;
   container.innerHTML = html;
 }
@@ -1981,22 +1972,13 @@ function setLeaderboardGroup(group) {
 }
 
 function openGroupAdmin() {
-  if (!groupAdminUnlocked) {
-    const pwd = prompt('Contraseña de administrador:');
-    if (pwd !== 'admin2026') { alert('Contraseña incorrecta.'); return; }
-    groupAdminUnlocked = true;
-  }
+  if (!isAdmin) return;
   _renderGroupAdminBody();
   document.getElementById('groupAdminModal').classList.add('open');
 }
 
 function closeGroupAdmin() {
   document.getElementById('groupAdminModal').classList.remove('open');
-}
-
-function logoutGroupAdmin() {
-  groupAdminUnlocked = false;
-  closeGroupAdmin();
 }
 
 function populateGroupDatalist() {
@@ -2068,7 +2050,36 @@ function toggleRules() {
 // ══════════════════════════════════════════════════════
 let activeSubTab = 'general';
 let activeLeaderboardGroup = '';
-let groupAdminUnlocked = false;
+let isAdmin = false;
+
+const ADMIN_PASSWORD = 'admin2026';
+
+function handleAdmin() {
+  if (isAdmin) {
+    isAdmin = false;
+    localStorage.removeItem('admin_logged_in');
+    document.getElementById('adminActions').style.display = 'none';
+    document.getElementById('adminBtn').textContent = '🔐 Admin';
+  } else {
+    const pass = prompt('Contraseña de admin:');
+    if (pass === ADMIN_PASSWORD) {
+      isAdmin = true;
+      localStorage.setItem('admin_logged_in', 'true');
+      document.getElementById('adminActions').style.display = 'flex';
+      document.getElementById('adminBtn').textContent = '🚪 Logout';
+    } else {
+      alert('Contraseña incorrecta.');
+    }
+  }
+}
+
+function initAdminUI() {
+  isAdmin = localStorage.getItem('admin_logged_in') === 'true';
+  if (isAdmin) {
+    document.getElementById('adminActions').style.display = 'flex';
+    document.getElementById('adminBtn').textContent = '🚪 Logout';
+  }
+}
 
 function getGroupNames() {
   const groups = new Set();
@@ -2123,6 +2134,7 @@ document.addEventListener('keydown', e => {
 (async () => {
   buildSelects();
   buildGroupFilter();
+  initAdminUI();
   await loadAll();
 })();
 </script>
