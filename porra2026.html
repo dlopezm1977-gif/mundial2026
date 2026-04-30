@@ -1929,7 +1929,13 @@ function renderGroupFilter() {
   const container = document.getElementById('groupFilterContainer');
   if (!container) return;
   const groups = getGroupNames();
-  if (groups.length === 0) { container.innerHTML = ''; return; }
+  const hasPlayers = Object.keys(porrasData).filter(k => k !== '_seeded').length > 0;
+  if (groups.length === 0) {
+    container.innerHTML = hasPlayers
+      ? `<div class="lb-group-filter"><button class="gf-manage-btn" onclick="openGroupAdmin()">⚙️ Gestionar grupos</button></div>`
+      : '';
+    return;
+  }
 
   let html = `<div class="lb-group-filter">
     <button class="lb-gf-btn${activeLeaderboardGroup===''?' active':''}" onclick="setLeaderboardGroup('')">🌐 Global</button>`;
