@@ -297,6 +297,30 @@
   .evo-legend-item.hidden{opacity:.3;}
   .evo-dot{width:10px;height:10px;border-radius:50%;flex-shrink:0;}
 
+  /* LEADERBOARD GROUP FILTER */
+  .lb-group-filter{display:flex;gap:.35rem;flex-wrap:wrap;margin-bottom:1.1rem;align-items:center;}
+  .lb-gf-btn{font-family:'DM Mono',monospace;font-size:.62rem;letter-spacing:.07em;text-transform:uppercase;
+    padding:.32rem .78rem;border:1px solid var(--border);background:var(--surface);color:var(--muted);
+    cursor:pointer;border-radius:20px;transition:all .15s;white-space:nowrap;}
+  .lb-gf-btn:hover{border-color:var(--accent2);color:var(--text);}
+  .lb-gf-btn.active{background:var(--accent2);border-color:var(--accent2);color:#fff;font-weight:600;}
+  .gf-manage-btn{background:none;border:1px solid rgba(31,45,74,.7);color:var(--muted);cursor:pointer;
+    font-size:.62rem;padding:.3rem .6rem;border-radius:20px;transition:all .15s;margin-left:.25rem;
+    font-family:'DM Mono',monospace;letter-spacing:.05em;text-transform:uppercase;white-space:nowrap;}
+  .gf-manage-btn:hover{border-color:var(--accent);color:var(--accent);}
+  /* ADMIN GRUPOS */
+  .ga-table{width:100%;border-collapse:collapse;margin-top:.5rem;}
+  .ga-table th{text-align:left;padding:.4rem .6rem;font-size:.62rem;color:var(--muted);
+    border-bottom:1px solid var(--border);font-family:'DM Mono',monospace;text-transform:uppercase;}
+  .ga-table td{padding:.38rem .6rem;border-bottom:1px solid rgba(31,45,74,.4);font-size:.8rem;}
+  .ga-input{background:var(--surface2);border:1px solid var(--border);color:var(--text);
+    border-radius:4px;padding:.28rem .5rem;font-size:.72rem;width:100%;
+    font-family:'DM Sans',sans-serif;transition:border-color .15s;}
+  .ga-input:focus{outline:none;border-color:var(--accent2);}
+  .lb-group-tag{display:inline-block;font-size:.55rem;font-family:'DM Mono',monospace;
+    background:rgba(59,130,246,.12);border:1px solid rgba(59,130,246,.25);color:var(--accent2);
+    border-radius:10px;padding:.07rem .42rem;margin-left:.35rem;vertical-align:middle;white-space:nowrap;}
+
   @media(max-width:480px){
     /* Leaderboard: ocultar columna Parciales, ajustar anchos */
     .lb-row{grid-template-columns:34px 1fr 48px 48px 56px;padding:.5rem .6rem;gap:.3rem;}
@@ -518,6 +542,7 @@
   <!-- ══ CLASIFICACIÓN ══ -->
   <div class="section" id="sec-clasificacion">
     <div id="dailyBannerContainer"></div>
+    <div id="groupFilterContainer"></div>
     <div class="sub-tabs">
       <button class="sub-tab active" onclick="switchSubTab('general')">General</button>
       <button class="sub-tab" onclick="switchSubTab('jornadas')">Por jornada</button>
@@ -555,6 +580,20 @@
     <div style="display:flex;gap:.75rem;justify-content:center;margin-top:1.25rem;flex-wrap:wrap">
       <button class="btn btn-accent" onclick="confirmIdentity()">✅ Sí, soy yo — cargar mi porra</button>
       <button class="btn" style="border-color:var(--muted);color:var(--muted)" onclick="denyIdentity()">✏️ No, usar otro nombre</button>
+    </div>
+  </div>
+</div>
+
+<!-- MODAL GESTIÓN DE GRUPOS -->
+<div class="modal-overlay" id="groupAdminModal">
+  <div class="modal" style="max-width:520px">
+    <button class="modal-close" onclick="closeGroupAdmin()">✕ Cerrar</button>
+    <h3>👥 Gestionar grupos</h3>
+    <p style="font-size:.75rem;color:var(--muted);margin:.5rem 0 1rem">Asigna un grupo a cada participante. Deja en blanco para no asignar grupo.</p>
+    <div id="groupAdminBody"></div>
+    <div style="display:flex;gap:.75rem;justify-content:flex-end;margin-top:1.25rem;flex-wrap:wrap">
+      <button class="btn" onclick="closeGroupAdmin()">Cancelar</button>
+      <button class="btn btn-accent" onclick="saveGroupAdmin()">💾 Guardar grupos</button>
     </div>
   </div>
 </div>
@@ -767,8 +806,11 @@ async function forceSyncFromRemote() {
   await loadAll();
   if (currentPlayer) refreshFormState();
   if (document.getElementById('sec-clasificacion').classList.contains('active')) {
+    renderGroupFilter();
     renderDailyBanner();
     renderLeaderboard();
+    if (activeSubTab === 'jornadas') renderDailySection();
+    if (activeSubTab === 'evolucion') renderEvolutionChart();
   }
 }
 
@@ -980,6 +1022,7 @@ async function loadOrStartPorra() {
     picks: {}, champion: '', runnerup: '',
     big4: { España:'', Francia:'', Argentina:'', Brasil:'' },
     continentPicks: {},
+    group: '',
     locked: false
   };
   document.getElementById('porraStatus').textContent = `✨ Nuevo participante: ${displayName}. Rellena tus pronósticos y envía la porra.`;
@@ -1472,11 +1515,11 @@ function scorePlayer(entry) {
 function renderLeaderboard() {
   koParticipantsCache = null; // reset cache on each render
 
-  const players = Object.entries(porrasData)
-    .filter(([k]) => k !== '_seeded')
+  const players = getPlayersFiltered()
     .map(([key, entry]) => {
       const { pts, exact, partial } = scorePlayer(entry);
-      return { key, name: entry.displayName || key, pts, exact, partial, locked: entry.locked };
+      return { key, name: entry.displayName || key, pts, exact, partial,
+               locked: entry.locked, group: entry.group || '' };
     })
     .sort((a,b) => b.pts - a.pts);
 
@@ -1492,10 +1535,12 @@ function renderLeaderboard() {
     return r && r.home !== undefined && r.home !== '' && r.away !== '';
   }).length;
 
+  const groupLabel = activeLeaderboardGroup ? ` · grupo <strong>${activeLeaderboardGroup}</strong>` : '';
+
   let html = `
     <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:1.25rem;flex-wrap:wrap;gap:.5rem">
       <div style="font-family:'DM Mono',monospace;font-size:.68rem;color:var(--muted)">
-        ${played}/72 partidos de grupos jugados · ${players.length} participantes
+        ${played}/72 partidos de grupos jugados · ${players.length} participantes${groupLabel}
       </div>
     </div>
     <div class="progress-bar"><div class="progress-fill" style="width:${Math.round(played/72*100)}%"></div></div>
@@ -1509,12 +1554,14 @@ function renderLeaderboard() {
     const medal = i===0?'gold':i===1?'silver':i===2?'bronze':'';
     const posClass = i===0?'p1':i===1?'p2':i===2?'p3':'';
     const specPts = p.pts - p.exact*25 - p.partial*10;
+    const groupTag = (!activeLeaderboardGroup && p.group)
+      ? `<span class="lb-group-tag">${p.group}</span>` : '';
 
     html += `
       <div class="lb-row ${medal}" onclick="showDetail('${p.key.replace(/'/g,"\\'")}')">
         <div class="lb-pos ${posClass}">${i+1}</div>
         <div>
-          <div class="lb-name">${p.name} ${p.locked?'🔒':''}</div>
+          <div class="lb-name">${p.name}${groupTag} ${p.locked?'🔒':''}</div>
           <div class="lb-sub">click para ver detalle</div>
         </div>
         <div class="lb-col"><div class="val">${p.exact}</div><div class="lbl">exactos</div></div>
@@ -1693,7 +1740,7 @@ function getDatesWithResults() {
 function getDailyLeaders() {
   const byDate = getMatchesByDate();
   const datesWithResults = getDatesWithResults();
-  const players = Object.entries(porrasData).filter(([k]) => k !== '_seeded');
+  const players = getPlayersFiltered();
 
   return datesWithResults.map(date => {
     const matches = byDate[date];
@@ -1779,8 +1826,7 @@ function renderEvolutionChart() {
 
   if (datesWithResults.length === 0) { container.innerHTML = ''; return; }
 
-  const players = Object.entries(porrasData)
-    .filter(([k]) => k !== '_seeded')
+  const players = getPlayersFiltered()
     .map(([key, entry]) => {
       const { pts } = scorePlayer(entry);
       return { key, name: entry.displayName || key, pts, entry };
@@ -1877,6 +1923,88 @@ function renderEvolutionChart() {
 }
 
 // ══════════════════════════════════════════════════════
+// GROUP FILTER
+// ══════════════════════════════════════════════════════
+function renderGroupFilter() {
+  const container = document.getElementById('groupFilterContainer');
+  if (!container) return;
+  const groups = getGroupNames();
+  if (groups.length === 0) { container.innerHTML = ''; return; }
+
+  let html = `<div class="lb-group-filter">
+    <button class="lb-gf-btn${activeLeaderboardGroup===''?' active':''}" onclick="setLeaderboardGroup('')">🌐 Global</button>`;
+  groups.forEach(g => {
+    const safe = g.replace(/'/g,"\\'");
+    html += `<button class="lb-gf-btn${activeLeaderboardGroup===g?' active':''}" onclick="setLeaderboardGroup('${safe}')">👥 ${g}</button>`;
+  });
+  html += `<button class="gf-manage-btn" onclick="openGroupAdmin()">⚙️ Gestionar</button>`;
+  html += `</div>`;
+  container.innerHTML = html;
+}
+
+function setLeaderboardGroup(group) {
+  activeLeaderboardGroup = group;
+  renderGroupFilter();
+  renderDailyBanner();
+  renderLeaderboard();
+  if (activeSubTab === 'jornadas') renderDailySection();
+  if (activeSubTab === 'evolucion') renderEvolutionChart();
+}
+
+function openGroupAdmin() {
+  if (!groupAdminUnlocked) {
+    const pwd = prompt('Contraseña de administrador:');
+    if (pwd !== 'admin2026') { alert('Contraseña incorrecta.'); return; }
+    groupAdminUnlocked = true;
+  }
+  _renderGroupAdminBody();
+  document.getElementById('groupAdminModal').classList.add('open');
+}
+
+function closeGroupAdmin() {
+  document.getElementById('groupAdminModal').classList.remove('open');
+}
+
+function _renderGroupAdminBody() {
+  const players = Object.entries(porrasData)
+    .filter(([k]) => k !== '_seeded')
+    .sort((a,b) => (a[1].displayName||a[0]).localeCompare(b[1].displayName||b[0]));
+  const groups = getGroupNames();
+
+  let html = `<table class="ga-table">
+    <thead><tr><th>Participante</th><th>Grupo</th></tr></thead>
+    <tbody>`;
+  players.forEach(([key, entry]) => {
+    const safeKey = key.replace(/"/g,'&quot;');
+    const safeVal = (entry.group||'').replace(/"/g,'&quot;');
+    html += `<tr>
+      <td>${entry.displayName || key}</td>
+      <td><input class="ga-input" type="text" data-key="${safeKey}" value="${safeVal}"
+        placeholder="sin grupo" list="ga-datalist"></td>
+    </tr>`;
+  });
+  html += `</tbody></table>
+    <datalist id="ga-datalist">
+      ${groups.map(g=>`<option value="${g.replace(/"/g,'&quot;')}">`).join('')}
+    </datalist>`;
+  document.getElementById('groupAdminBody').innerHTML = html;
+}
+
+async function saveGroupAdmin() {
+  document.querySelectorAll('.ga-input').forEach(inp => {
+    const key = inp.getAttribute('data-key');
+    if (porrasData[key]) porrasData[key].group = inp.value.trim();
+  });
+  await savePorras();
+  closeGroupAdmin();
+  renderGroupFilter();
+  renderDailyBanner();
+  renderLeaderboard();
+  if (activeSubTab === 'jornadas') renderDailySection();
+  if (activeSubTab === 'evolucion') renderEvolutionChart();
+}
+
+// ══════════════════════════════════════════════════════
 // RULES ACCORDION
 // ══════════════════════════════════════════════════════
 function toggleRules() {
@@ -1890,6 +2018,22 @@ function toggleRules() {
 // TABS
 // ══════════════════════════════════════════════════════
 let activeSubTab = 'general';
+let activeLeaderboardGroup = '';
+let groupAdminUnlocked = false;
+
+function getGroupNames() {
+  const groups = new Set();
+  Object.entries(porrasData)
+    .filter(([k]) => k !== '_seeded')
+    .forEach(([, entry]) => { if (entry.group) groups.add(entry.group); });
+  return [...groups].sort();
+}
+
+function getPlayersFiltered() {
+  return Object.entries(porrasData)
+    .filter(([k]) => k !== '_seeded')
+    .filter(([, entry]) => !activeLeaderboardGroup || entry.group === activeLeaderboardGroup);
+}
 
 function switchSubTab(tab) {
   activeSubTab = tab;
@@ -1909,6 +2053,7 @@ function switchTab(tab) {
   document.querySelectorAll('.section').forEach(s => s.classList.remove('active'));
   document.getElementById('sec-'+tab).classList.add('active');
   if (tab === 'clasificacion') {
+    renderGroupFilter();
     renderDailyBanner();
     renderLeaderboard();
     if (activeSubTab === 'jornadas') renderDailySection();
