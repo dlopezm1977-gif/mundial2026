@@ -16,18 +16,34 @@ El proyecto tiene dos ficheros HTML independientes que comparten datos en tiempo
 
 Pantalla principal del torneo. Muestra los **104 partidos** (72 de grupos + 32 de eliminatorias) organizados por fase y fecha, con horarios en hora España.
 
-**Funcionalidades:**
+Organizada en cuatro pestañas:
 
-- **Visualización de partidos**: grupos A–L y todas las rondas KO (16avos, octavos, cuartos, semis, tercer puesto y final)
-- **Resultados en tiempo real**: el admin introduce los goles; en partidos KO con empate, también el resultado de penaltis
-- **Clasificación de grupos**: se calcula automáticamente con criterios de desempate (puntos, diferencia de goles, goles a favor)
-- **Resolución de slots KO**: algoritmo que asigna los 8 mejores terceros clasificados a sus cruces correctos
-- **Logos de canales**: DAZN aparece siempre; TVE se marca automáticamente en el partido inaugural, todos los partidos de España, y las semifinales/final/tercer puesto (el admin puede marcarlo en cualquier otro partido)
-- **Estadísticas**: partidos jugados, goles totales, media por partido y una tarjeta de progreso con barra visual; antes del inicio del torneo esa tarjeta muestra una cuenta atrás en directo (días, horas, minutos y segundos) hasta el partido inaugural
-- **Filtros**: por grupo, por fase (grupos / KO), por fecha o solo partidos en TVE (disponible para todos los usuarios)
-- **Exportar/importar CSV**: backup completo de resultados
-- **Sincronización**: estado visible en pantalla (cargando / sincronizado / error); fallback a localStorage sin conexión
-- **Diseño responsive**: optimizado para móvil con breakpoints a 680 px y 480 px
+**Partidos**
+- Muestra los 104 partidos (72 de grupos + 32 de eliminatorias) ordenados por fase y fecha, con horarios en hora España
+- El admin introduce los goles directamente; en partidos KO con empate se añade el resultado de penaltis
+- Logos de canal: DAZN siempre visible; TVE se activa automáticamente en el partido inaugural, todos los de España, y semis/final/tercer puesto (el admin puede marcarlo manualmente en cualquier otro)
+- Estadísticas: partidos jugados, goles totales, media por partido y barra de progreso; antes del inicio muestra cuenta atrás en directo hasta el partido inaugural
+- Filtros por grupo, por fase (grupos / KO), por fecha o solo partidos en TVE
+
+**Clasificación**
+- Tabla por grupo calculada automáticamente con criterios de desempate (puntos, diferencia de goles, goles a favor)
+- Resalta visualmente quién clasifica directo (1.º y 2.º) y quién puede ser mejor tercero
+
+**Cuadro KO**
+- Cuadro visual de eliminatorias de izquierda a derecha: 16avos → Octavos → Cuartos → Semifinales → Final → Campeón
+- Conectores en forma de corchete que muestran el camino de cada equipo a lo largo de las rondas
+- Las tarjetas muestran equipos (con bandera), marcador, ganador resaltado y eliminado en gris
+- El campeón se proclama en una caja dorada al final del cuadro en cuanto se disputa la final
+- Partido por el 3.er y 4.º puesto mostrado por separado bajo el cuadro principal
+- El admin puede editar resultados directamente desde el cuadro haciendo clic en cualquier partido
+- Algoritmo que asigna automáticamente los 8 mejores terceros a sus slots KO correctos
+
+**Datos CSV**
+- Exportar/importar backup completo de resultados
+
+**General**
+- Sincronización con estado visible (cargando / sincronizado / error); fallback a localStorage sin conexión
+- Diseño responsive optimizado para móvil con breakpoints a 680 px y 480 px
 
 ### 🎯 `porra2026.html` — Sistema de predicciones
 
@@ -223,7 +239,7 @@ La API key está configurada directamente en el código de cada fichero HTML.
 
 | Fichero | Descripción |
 |---|---|
-| `index.html` | Seguimiento de partidos y clasificaciones de grupo |
+| `index.html` | Seguimiento de partidos, clasificaciones de grupo y cuadro de eliminatorias |
 | `porra2026.html` | Sistema de predicciones y leaderboard |
 | `mensajes_whatsapp.txt` | Mensajes listos para compartir la porra por WhatsApp |
 | `DAZN.png` | Logo DAZN (usado en los match cards) |
