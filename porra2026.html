@@ -434,6 +434,13 @@
             <button class="btn btn-accent" id="loadBtn" onclick="loadOrStartPorra()">Cargar / Nuevo</button>
           </div>
         </div>
+        <div class="name-row" id="groupRow" style="display:none">
+          <label>👥 Grupo <span style="font-weight:400;text-transform:none;letter-spacing:0;font-family:'DM Sans',sans-serif;font-size:.68rem">(opcional)</span></label>
+          <div class="name-row-fields">
+            <input type="text" id="playerGroup" class="name-input" placeholder="Nombre del grupo…" maxlength="40" list="playerGroupList" autocomplete="off">
+            <datalist id="playerGroupList"></datalist>
+          </div>
+        </div>
         <div id="porraStatus" style="font-size:.75rem;color:var(--muted)"></div>
       </div>
     </div>
@@ -587,9 +594,12 @@
 <!-- MODAL GESTIÓN DE GRUPOS -->
 <div class="modal-overlay" id="groupAdminModal">
   <div class="modal" style="max-width:520px">
-    <button class="modal-close" onclick="closeGroupAdmin()">✕ Cerrar</button>
-    <h3>👥 Gestionar grupos</h3>
-    <p style="font-size:.75rem;color:var(--muted);margin:.5rem 0 1rem">Asigna un grupo a cada participante. Deja en blanco para no asignar grupo.</p>
+    <div style="display:flex;align-items:center;gap:.75rem;margin-bottom:1rem;flex-wrap:wrap">
+      <h3 style="margin:0;flex:1">👥 Gestionar grupos</h3>
+      <button class="btn" style="font-size:.62rem;border-color:var(--red);color:var(--red);padding:.3rem .65rem" onclick="logoutGroupAdmin()" title="Cerrar sesión de administrador">🔒 Cerrar sesión admin</button>
+      <button class="modal-close" style="position:static;margin:0" onclick="closeGroupAdmin()">✕</button>
+    </div>
+    <p style="font-size:.75rem;color:var(--muted);margin-bottom:1rem">Asigna un grupo a cada participante. Deja en blanco para no asignar grupo.</p>
     <div id="groupAdminBody"></div>
     <div style="display:flex;gap:.75rem;justify-content:flex-end;margin-top:1.25rem;flex-wrap:wrap">
       <button class="btn" onclick="closeGroupAdmin()">Cancelar</button>
@@ -988,6 +998,8 @@ function logout() {
   document.getElementById('loadBtn').disabled = false;
   document.getElementById('logoutBtn').style.display = 'none';
   document.getElementById('porraStatus').textContent = '';
+  document.getElementById('groupRow').style.display = 'none';
+  document.getElementById('playerGroup').value = '';
 }
 
 async function loadOrStartPorra() {
@@ -1111,6 +1123,17 @@ function refreshFormState() {
     document.getElementById('pickFrancia').onchange   = () => { porrasData[currentPlayer].big4.Francia   = document.getElementById('pickFrancia').value; };
     document.getElementById('pickArgentina').onchange = () => { porrasData[currentPlayer].big4.Argentina = document.getElementById('pickArgentina').value; };
     document.getElementById('pickBrasil').onchange    = () => { porrasData[currentPlayer].big4.Brasil    = document.getElementById('pickBrasil').value; };
+  }
+
+  // Grupo del participante
+  const groupRow = document.getElementById('groupRow');
+  const groupInput = document.getElementById('playerGroup');
+  if (groupRow && groupInput) {
+    groupRow.style.display = '';
+    groupInput.value = entry.group || '';
+    populateGroupDatalist();
+    groupInput.onchange = savePlayerGroup;
+    groupInput.oninput  = null; // solo guarda al salir del campo
   }
 
   renderMatchRows();
@@ -1971,6 +1994,25 @@ function closeGroupAdmin() {
   document.getElementById('groupAdminModal').classList.remove('open');
 }
 
+function logoutGroupAdmin() {
+  groupAdminUnlocked = false;
+  closeGroupAdmin();
+}
+
+function populateGroupDatalist() {
+  const dl = document.getElementById('playerGroupList');
+  if (!dl) return;
+  dl.innerHTML = getGroupNames().map(g => `<option value="${g.replace(/"/g,'&quot;')}">`).join('');
+}
+
+async function savePlayerGroup() {
+  if (!currentPlayer || !porrasData[currentPlayer]) return;
+  const val = document.getElementById('playerGroup').value.trim();
+  porrasData[currentPlayer].group = val;
+  populateGroupDatalist();
+  await savePorras();
+}
+
 function _renderGroupAdminBody() {
   const players = Object.entries(porrasData)
     .filter(([k]) => k !== '_seeded')
@@ -2003,6 +2045,7 @@ async function saveGroupAdmin() {
   });
   await savePorras();
   closeGroupAdmin();
+  populateGroupDatalist();
   renderGroupFilter();
   renderDailyBanner();
   renderLeaderboard();
