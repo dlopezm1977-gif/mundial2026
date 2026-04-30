@@ -54,14 +54,16 @@ Permite a cada participante crear su propia porra y competir en un leaderboard c
 - **Predicciones de grupos**: 72 resultados de fase de grupos con filtro por grupo
 - **Pronósticos especiales**: campeón (200 pts), subcampeón (150 pts) y ronda máxima del Big 4 — España, Francia, Argentina y Brasil — (100 pts c/u)
 - **Predicción de continentes**: se predice cuántos equipos de cada continente llegarán a cada ronda eliminatoria (50 pts por acierto exacto)
+- **Grupos de participantes**: cada usuario puede asignarse a un grupo (trabajo, familia, amigos…) al registrarse o en cualquier momento; el admin también puede asignar grupos desde el panel de administración
 - **Bloqueo automático**: la porra se bloquea al enviar; se puede desbloquear y editar hasta el **10 de junio de 2026 a las 23:59 (hora España)**; después queda bloqueada definitivamente
 - **Sincronización multiusuario**: varios participantes pueden rellenar su porra a la vez sin conflictos
 - **Diseño responsive**: optimizado para móvil, incluyendo el formulario de nombre y la clasificación
 
 **Pestaña Clasificación:**
 
-- **Banner "Rey del día"**: siempre visible en la cabecera, muestra quién sumó más puntos en la última jornada con resultados
-- **Sub-pestaña General**: ranking completo con posición, nombre, exactos, especiales y total; medallas 🥇🥈🥉 para el top 3
+- **Banner "Rey del día"**: siempre visible en la cabecera, muestra quién sumó más puntos en la última jornada con resultados (respeta el filtro de grupo activo)
+- **Filtro de grupo**: botones 🌐 Global + uno por cada grupo creado; al activar un grupo, el ranking, el histórico de jornadas y la gráfica de evolución se filtran a ese grupo
+- **Sub-pestaña General**: ranking completo con posición, nombre (etiqueta de grupo visible en vista Global), exactos, especiales y total; medallas 🥇🥈🥉 para el top 3
 - **Sub-pestaña Por jornada**: tabla histórica con el top 3 de cada día jugado
 - **Sub-pestaña Evolución**: gráfica de líneas (Chart.js) con la evolución de puntos acumulados por jugador a lo largo del torneo; leyenda interactiva para ocultar/mostrar participantes
 - **Detalle de porra**: clic en cualquier participante abre un modal con los 72 partidos y los pronósticos especiales comparados con el resultado real
@@ -131,15 +133,22 @@ Se predice cuántos equipos de cada continente llegan a cada ronda eliminatoria.
 
 ## 🔐 Sistema de admin
 
-Contraseña: `admin2026`
+Contraseña: `admin2026` — compartida entre las dos páginas; la sesión se persiste en `localStorage`.
+
+### `index.html`
 
 Con sesión de admin activa se habilitan:
-- Editar resultados (clic en el marcador de cualquier partido)
+- Editar resultados (clic en el marcador de cualquier partido o desde el Cuadro KO)
 - Marcar/desmarcar emisión en TVE (📺) en partidos no detectados automáticamente
 - Exportar e importar datos en CSV
 - Resetear todos los datos
 
-Los usuarios sin login pueden ver resultados, clasificaciones, estadísticas y todos los filtros (incluyendo el filtro 📺 TVE), pero no modificar nada.
+### `porra2026.html`
+
+Con sesión de admin activa se habilita:
+- **Gestionar grupos**: asignar o cambiar el grupo de cualquier participante desde un panel con autocompletado
+
+Los usuarios sin login pueden ver resultados, clasificaciones, estadísticas y todos los filtros, pero no modificar nada.
 
 ---
 
@@ -213,6 +222,7 @@ La API key está configurada directamente en el código de cada fichero HTML.
       "1": { "h": 2, "a": 0 },
       "2": { "h": 1, "a": 1 }
     },
+    "group": "Trabajo",
     "champion": "Brasil",
     "runnerup": "Argentina",
     "big4": {

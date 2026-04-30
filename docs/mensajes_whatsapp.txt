@@ -2,7 +2,7 @@
 MENSAJES WHATSAPP - PORRA MUNDIAL 2026
 ================================================================================
 Copia y pega el que más te guste según el momento.
-Los hay de 3 tipos: LANZAMIENTO, RECORDATORIO y NORMAS COMPLETAS.
+Los hay de 4 tipos: LANZAMIENTO, NORMAS COMPLETAS, RECORDATORIO y GRUPOS.
 ================================================================================
 
 
@@ -45,6 +45,8 @@ Tienes hasta el *10 de junio a las 23:59 (hora España)* para mandar tus predicc
 • Subcampeón acertado → 150 pts
 • Ronda exacta del Big 4 → 100 pts c/u
 • Continentes exactos → 50 pts c/u
+
+👥 *Grupos* — Al registrarte puedes unirte a un grupo (trabajo, familia, amigos…) y ver un ranking solo entre los vuestros, además del global con todos los participantes.
 
 💰 *¿Cuánto cuesta?* — NADA. Es solo por gloria.
 
@@ -106,17 +108,19 @@ Después de esa hora queda bloqueada definitivamente.
 *🖥️ CÓMO APUNTARSE*
 ─────────────────────────────
 
-1. Abre el enlace de la porra → https://dlopezm1977-gif.github.io/mundial2026/porra2026.html
-2. Escribe tu *nombre de usuario* (sin espacios, ej: david.lopez) y tu *nombre* para el ranking
-3. Rellena los resultados de los grupos, los especiales y la predicción de continentes
-4. Pulsa *"Enviar mi porra"* — ya queda guardada en la nube
-5. Puedes volver a editarla cuando quieras *antes del 10 de junio*
+1. Abre el enlace → https://dlopezm1977-gif.github.io/mundial2026/porra2026.html
+2. Escribe tu *nombre o alias* y pulsa "Cargar / Nuevo"
+3. (Opcional) Escribe el nombre de tu *grupo* para competir también en un ranking privado
+4. Rellena los resultados de los grupos, los especiales y la predicción de continentes
+5. Pulsa *"Enviar mi porra"* — ya queda guardada en la nube
+6. Puedes volver a editarla cuando quieras *antes del 10 de junio*
 
 ─────────────────────────────
 *📊 SEGUIMIENTO*
 ─────────────────────────────
 
 • Hay un *ranking en tiempo real* con todos los participantes
+• Si te unes a un grupo, puedes ver el *ranking solo entre los del grupo*
 • Puedes ver el detalle de la porra de cualquier persona
 • Se actualiza según van llegando los resultados reales del Mundial
 
@@ -170,13 +174,33 @@ MENSAJE 6 — ARRANQUE DEL MUNDIAL (el 11 de junio)
 Hoy empieza el Mundial 2026 y las porras ya están bloqueadas. Que empiece el espectáculo ⚽
 
 Podéis ver el ranking en tiempo real aquí:
-➡️ https://dlopezm1977-gif.github.io/mundial2026/porra2026.html → pestaña "Leaderboard"
+➡️ https://dlopezm1977-gif.github.io/mundial2026/porra2026.html → pestaña "Clasificación"
 
 Se actualiza conforme van llegando los resultados. ¡Mucho ánimo a todos! 🎉
 
 
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+MENSAJE 7 — INVITACIÓN A UN GRUPO CONCRETO
+  (sustituye [NOMBRE DEL GRUPO] por el tuyo, ej: "Trabajo", "Familia"…)
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+⚽ *PORRA MUNDIAL 2026 — Grupo [NOMBRE DEL GRUPO]* ⚽
+
+Estamos montando un grupo dentro de la porra del Mundial para competir entre nosotros, además del ranking global con todos los participantes.
+
+Para apuntarte:
+1. Entra en → https://dlopezm1977-gif.github.io/mundial2026/porra2026.html
+2. Escribe tu nombre y pulsa "Cargar / Nuevo"
+3. En el campo *Grupo* escribe exactamente: *[NOMBRE DEL GRUPO]*
+4. Rellena tus predicciones y envía la porra antes del *10 de junio a las 23:59*
+
+En la pestaña Clasificación podrás ver el ranking solo del grupo pulsando el botón *👥 [NOMBRE DEL GRUPO]*.
+
+¡A ver quién gana entre nosotros! 🏅
+
+
 ================================================================================
 URLS DE REFERENCIA:
-- Porra (predicciones): https://dlopezm1977-gif.github.io/mundial2026/porra2026.html
-- Seguimiento (resultados/admin): https://dlopezm1977-gif.github.io/mundial2026/index.html
+- Porra (predicciones y ranking): https://dlopezm1977-gif.github.io/mundial2026/porra2026.html
+- Seguimiento (resultados/cuadro KO): https://dlopezm1977-gif.github.io/mundial2026/index.html
 ================================================================================
