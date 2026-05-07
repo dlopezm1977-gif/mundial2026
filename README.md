@@ -51,11 +51,15 @@ Organizada en cuatro pestañas:
 
 Permite a cada participante crear su propia porra y competir en un leaderboard colectivo.
 
-**Funcionalidades:**
+**Flujo del formulario (en orden):**
 
-- **Predicciones de grupos**: 72 resultados de fase de grupos con filtro por grupo
-- **Pronósticos especiales**: campeón (200 pts), subcampeón (150 pts) y ronda máxima del Big 4 — España, Francia, Argentina y Brasil — (100 pts c/u)
-- **Predicción de continentes**: se predice cuántos equipos de cada continente llegarán a cada ronda eliminatoria (50 pts por acierto exacto)
+1. ⚽ **Resultados Fase de Grupos** — 72 partidos con filtro por grupo
+2. 🔮 **Simulador de eliminatorias** — calcula los cruces del cuadro KO a partir de los resultados de grupos; el usuario elige el ganador de cada partido ronda a ronda y al terminar rellena automáticamente campeón, subcampeón, Big 4 y equipos por continente (siempre editable antes de enviar)
+3. 🏆 **Pronósticos especiales** — campeón (200 pts), subcampeón (150 pts) y ronda máxima del Big 4 — España, Francia, Argentina y Brasil — (100 pts c/u)
+4. 🌍 **Equipos por continente** — cuántos equipos de cada continente llegan a cada ronda eliminatoria (50 pts por acierto exacto)
+
+**Otras funcionalidades:**
+
 - **Grupos de participantes**: cada usuario puede asignarse a un grupo (trabajo, familia, amigos…) al registrarse o en cualquier momento; el admin también puede asignar grupos desde el panel de administración
 - **Bloqueo automático**: la porra se bloquea al enviar; se puede desbloquear y editar hasta el **10 de junio de 2026 a las 23:59 (hora España)**; después queda bloqueada definitivamente
 - **Sincronización multiusuario**: varios participantes pueden rellenar su porra a la vez sin conflictos

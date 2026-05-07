@@ -339,6 +339,31 @@
     /* Sub-tabs más compactas */
     .sub-tab{padding:.45rem .7rem;font-size:.6rem;}
   }
+  /* ── Simulador de eliminatorias ── */
+  .sim-overlay{display:none;position:fixed;inset:0;background:rgba(0,0,0,.78);z-index:950;overflow-y:auto;padding:1rem;}
+  .sim-overlay.open{display:flex;align-items:flex-start;justify-content:center;}
+  .sim-box{background:var(--surface);border:1px solid var(--border);border-radius:12px;width:100%;max-width:660px;margin:auto;}
+  .sim-head{background:var(--surface2);padding:1.1rem 1.4rem;display:flex;align-items:center;justify-content:space-between;border-bottom:1px solid var(--border);border-radius:12px 12px 0 0;}
+  .sim-head h2{font-family:'Bebas Neue',sans-serif;font-size:1.35rem;color:var(--accent);letter-spacing:.05em;margin:0;}
+  .sim-prog{display:flex;gap:.35rem;padding:.8rem 1.2rem;background:var(--surface2);border-bottom:1px solid var(--border);}
+  .sim-step{flex:1;text-align:center;font-size:.6rem;font-family:'DM Mono',monospace;padding:.3rem .15rem;border-radius:4px;color:var(--muted);border:1px solid var(--border);}
+  .sim-step.done{color:var(--green);border-color:var(--green);}
+  .sim-step.active{background:var(--accent);color:#0a0e1a;border-color:var(--accent);font-weight:700;}
+  .sim-body{padding:1.2rem 1.4rem;}
+  .sim-round-title{font-family:'Bebas Neue',sans-serif;font-size:1rem;color:var(--accent2);letter-spacing:.08em;margin-bottom:.9rem;}
+  .sim-match{display:flex;align-items:center;gap:.4rem;padding:.55rem .7rem;background:var(--surface2);border-radius:8px;margin-bottom:.4rem;border:1px solid var(--border);}
+  .sim-team{flex:1;display:flex;align-items:center;gap:.35rem;font-size:.8rem;}
+  .sim-team.right{justify-content:flex-end;}
+  .sim-vs{font-size:.65rem;color:var(--muted);font-family:'DM Mono',monospace;min-width:18px;text-align:center;}
+  .sim-btn{padding:.22rem .55rem;font-size:.7rem;border-radius:4px;border:1px solid var(--border);background:none;color:var(--muted);cursor:pointer;transition:all .15s;white-space:nowrap;}
+  .sim-btn:hover{border-color:var(--accent);color:var(--accent);}
+  .sim-btn.sel{background:var(--accent);color:#0a0e1a;border-color:var(--accent);font-weight:700;}
+  .sim-foot{padding:.9rem 1.2rem;border-top:1px solid var(--border);display:flex;gap:.6rem;justify-content:flex-end;flex-wrap:wrap;}
+  .sim-card{background:var(--surface2);border-radius:8px;padding:.9rem 1rem;margin-bottom:.8rem;}
+  .sim-card h4{font-size:.65rem;color:var(--muted);text-transform:uppercase;letter-spacing:.08em;margin-bottom:.65rem;}
+  .sim-row{display:flex;align-items:center;gap:.45rem;font-size:.8rem;margin-bottom:.35rem;}
+  .sim-badge{font-size:.62rem;padding:.12rem .35rem;border-radius:3px;background:var(--surface);border:1px solid var(--border);color:var(--accent);font-family:'DM Mono',monospace;margin-left:auto;}
+  .sim-sublabel{font-size:.62rem;color:var(--muted);margin-bottom:.3rem;}
 </style>
 </head>
 <body>
@@ -471,6 +496,31 @@
         </div>
       </div>
 
+      <!-- Resultados fase de grupos -->
+      <div class="form-section">
+        <div class="form-section-header">
+          <h3>⚽ Resultados Fase de Grupos</h3>
+          <span style="font-size:.65rem;color:var(--muted);font-family:'DM Mono',monospace;margin-left:auto">72 partidos</span>
+        </div>
+        <div class="form-section-body">
+          <div class="group-filter" id="groupFilter"></div>
+          <div class="match-rows" id="matchRowsContainer"></div>
+        </div>
+      </div>
+
+      <!-- Simulador -->
+      <div class="form-section">
+        <div class="form-section-header">
+          <h3>🔮 Simulador de eliminatorias</h3>
+        </div>
+        <div class="form-section-body">
+          <p style="font-size:.78rem;color:var(--muted);margin-bottom:1rem;line-height:1.5">
+            Calcula los cruces a partir de tus resultados de grupos, elige el ganador de cada partido ronda a ronda y rellena automáticamente el Big 4 y los equipos por continente.
+          </p>
+          <button class="btn" style="border-color:var(--accent);color:var(--accent)" onclick="simOpen()">🔮 Simular eliminatorias</button>
+        </div>
+      </div>
+
       <!-- Especiales: campeón, subcampeón, big 4 -->
       <div class="form-section">
         <div class="form-section-header">
@@ -535,18 +585,6 @@
         </div>
       </div>
 
-      <!-- Resultados fase de grupos -->
-      <div class="form-section">
-        <div class="form-section-header">
-          <h3>⚽ Resultados Fase de Grupos</h3>
-          <span style="font-size:.65rem;color:var(--muted);font-family:'DM Mono',monospace;margin-left:auto">72 partidos</span>
-        </div>
-        <div class="form-section-body">
-          <div class="group-filter" id="groupFilter"></div>
-          <div class="match-rows" id="matchRowsContainer"></div>
-        </div>
-      </div>
-
       <!-- Submit -->
       <div class="submit-area" id="submitArea">
         <button class="btn btn-purple" style="padding:.7rem 2.5rem;font-size:.85rem" onclick="submitPorra()">
@@ -557,6 +595,19 @@
       </div>
 
     </div><!-- /porraForm -->
+  </div>
+
+  <!-- ══ MODAL SIMULADOR ══ -->
+  <div class="sim-overlay" id="simOverlay" onclick="if(event.target===this)simClose()">
+    <div class="sim-box">
+      <div class="sim-head">
+        <h2>🔮 Simulador de eliminatorias</h2>
+        <button style="background:none;border:none;color:var(--muted);font-size:1.2rem;cursor:pointer;line-height:1" onclick="simClose()">✕</button>
+      </div>
+      <div class="sim-prog" id="simProg"></div>
+      <div class="sim-body" id="simBody"></div>
+      <div class="sim-foot" id="simFoot"></div>
+    </div>
   </div>
 
   <!-- ══ CLASIFICACIÓN ══ -->
@@ -1300,7 +1351,7 @@ function buildKOParticipants() {
     {id:73,hs:{t:'g',p:2,g:'A'},as:{t:'g',p:2,g:'B'}},
     {id:74,hs:{t:'g',p:1,g:'E'},as:{t:'th',pools:['A','B','C','D','F']}},
     {id:75,hs:{t:'g',p:1,g:'F'},as:{t:'g',p:2,g:'C'}},
-    {id:76,hs:{t:'g',p:1,g:'E'},as:{t:'g',p:2,g:'F'}},
+    {id:76,hs:{t:'g',p:1,g:'C'},as:{t:'g',p:2,g:'F'}},
     {id:77,hs:{t:'g',p:1,g:'I'},as:{t:'th',pools:['C','D','F','G','H']}},
     {id:78,hs:{t:'g',p:2,g:'E'},as:{t:'g',p:2,g:'I'}},
     {id:79,hs:{t:'g',p:1,g:'A'},as:{t:'th',pools:['C','E','F','H','I']}},
@@ -2141,6 +2192,360 @@ document.addEventListener('keydown', e => {
 });
 
 // ══════════════════════════════════════════════════════
+// ══════════════════════════════════════════════════════
+// SIMULADOR DE ELIMINATORIAS
+// ══════════════════════════════════════════════════════
+
+const SIM_ROUNDS = [
+  {name:'16avos de Final',  ids:[73,74,75,76,77,78,79,80,81,82,83,84,85,86,87,88]},
+  {name:'Octavos de Final', ids:[89,90,91,92,93,94,95,96]},
+  {name:'Cuartos de Final', ids:[97,98,99,100]},
+  {name:'Semifinales',      ids:[101,102]},
+  {name:'Final',            ids:[103,104]}
+];
+
+const SIM_KO_DEFS = [
+  {id:73,hs:{t:'g',p:2,g:'A'},as:{t:'g',p:2,g:'B'}},
+  {id:74,hs:{t:'g',p:1,g:'E'},as:{t:'th',pools:['A','B','C','D','F']}},
+  {id:75,hs:{t:'g',p:1,g:'F'},as:{t:'g',p:2,g:'C'}},
+  {id:76,hs:{t:'g',p:1,g:'C'},as:{t:'g',p:2,g:'F'}},
+  {id:77,hs:{t:'g',p:1,g:'I'},as:{t:'th',pools:['C','D','F','G','H']}},
+  {id:78,hs:{t:'g',p:2,g:'E'},as:{t:'g',p:2,g:'I'}},
+  {id:79,hs:{t:'g',p:1,g:'A'},as:{t:'th',pools:['C','E','F','H','I']}},
+  {id:80,hs:{t:'g',p:1,g:'L'},as:{t:'th',pools:['E','H','I','J','K']}},
+  {id:81,hs:{t:'g',p:1,g:'D'},as:{t:'th',pools:['B','E','F','I','J']}},
+  {id:82,hs:{t:'g',p:1,g:'G'},as:{t:'th',pools:['A','E','H','I','J']}},
+  {id:83,hs:{t:'g',p:2,g:'K'},as:{t:'g',p:2,g:'L'}},
+  {id:84,hs:{t:'g',p:1,g:'H'},as:{t:'g',p:2,g:'J'}},
+  {id:85,hs:{t:'g',p:1,g:'B'},as:{t:'th',pools:['E','F','G','I','J']}},
+  {id:86,hs:{t:'g',p:1,g:'J'},as:{t:'g',p:2,g:'H'}},
+  {id:87,hs:{t:'g',p:1,g:'K'},as:{t:'th',pools:['D','E','I','J','L']}},
+  {id:88,hs:{t:'g',p:2,g:'D'},as:{t:'g',p:2,g:'G'}},
+  {id:89,hs:{t:'w',mid:74},as:{t:'w',mid:77}},
+  {id:90,hs:{t:'w',mid:73},as:{t:'w',mid:75}},
+  {id:91,hs:{t:'w',mid:76},as:{t:'w',mid:78}},
+  {id:92,hs:{t:'w',mid:79},as:{t:'w',mid:80}},
+  {id:93,hs:{t:'w',mid:83},as:{t:'w',mid:84}},
+  {id:94,hs:{t:'w',mid:81},as:{t:'w',mid:82}},
+  {id:95,hs:{t:'w',mid:86},as:{t:'w',mid:88}},
+  {id:96,hs:{t:'w',mid:85},as:{t:'w',mid:87}},
+  {id:97,hs:{t:'w',mid:89},as:{t:'w',mid:90}},
+  {id:98,hs:{t:'w',mid:93},as:{t:'w',mid:94}},
+  {id:99,hs:{t:'w',mid:91},as:{t:'w',mid:92}},
+  {id:100,hs:{t:'w',mid:95},as:{t:'w',mid:96}},
+  {id:101,hs:{t:'w',mid:97},as:{t:'w',mid:98}},
+  {id:102,hs:{t:'w',mid:99},as:{t:'w',mid:100}},
+  {id:103,hs:{t:'l',mid:101},as:{t:'l',mid:102}},
+  {id:104,hs:{t:'w',mid:101},as:{t:'w',mid:102}}
+];
+
+const SIM_GROUPS = {
+  A:['México','Sudáfrica','Corea del Sur','República Checa'],
+  B:['Canadá','Bosnia y Herzegovina','Qatar','Suiza'],
+  C:['Brasil','Marruecos','Haití','Escocia'],
+  D:['Estados Unidos','Paraguay','Australia','Turquía'],
+  E:['Alemania','Curazao','Costa de Marfil','Ecuador'],
+  F:['Países Bajos','Japón','Suecia','Túnez'],
+  G:['Bélgica','Egipto','Irán','Nueva Zelanda'],
+  H:['España','Cabo Verde','Arabia Saudita','Uruguay'],
+  I:['Francia','Senegal','Irak','Noruega'],
+  J:['Argentina','Argelia','Austria','Jordania'],
+  K:['Portugal','RD de Congo','Uzbekistán','Colombia'],
+  L:['Inglaterra','Croacia','Ghana','Panamá']
+};
+
+let simState = null;
+
+function simOpen() {
+  if (!currentPlayer) { alert('Carga tu porra primero.'); return; }
+
+  // Calcular standings desde los picks del usuario
+  const picks = porrasData[currentPlayer]?.picks || {};
+  const st = {};
+  Object.keys(SIM_GROUPS).forEach(g => {
+    st[g] = {};
+    SIM_GROUPS[g].forEach(t => { st[g][t] = {pj:0,gf:0,gc:0,pts:0}; });
+  });
+  GROUP_MATCHES.forEach(m => {
+    const p = picks[m.id];
+    if (!p || p.h === '' || p.h === undefined || p.a === '' || p.a === undefined) return;
+    const h = st[m.group][m.home], a = st[m.group][m.away];
+    if (!h || !a) return;
+    h.pj++; a.pj++;
+    h.gf += +p.h; h.gc += +p.a;
+    a.gf += +p.a; a.gc += +p.h;
+    if (+p.h > +p.a) { h.pts+=3; }
+    else if (+p.h < +p.a) { a.pts+=3; }
+    else { h.pts++; a.pts++; }
+  });
+
+  function sortG(g) {
+    return Object.entries(st[g])
+      .map(([name,s]) => ({name,...s,dg:s.gf-s.gc}))
+      .sort((a,b) => b.pts-a.pts || b.dg-a.dg || b.gf-a.gf || a.name.localeCompare(b.name));
+  }
+
+  const classified = {};
+  Object.keys(SIM_GROUPS).forEach(g => { classified[g] = sortG(g).map(t => t.name); });
+
+  const bestThirds = Object.keys(SIM_GROUPS)
+    .map(g => { const s = sortG(g); return s.length >= 3 ? {...s[2], group:g} : null; })
+    .filter(Boolean)
+    .sort((a,b) => b.pts-a.pts || b.dg-a.dg || b.gf-a.gf || a.name.localeCompare(b.name))
+    .slice(0, 8);
+
+  // Asignar terceros a sus slots con backtracking para evitar "?"
+  // Usamos los 12 terceros (no solo los 8 mejores) para garantizar asignación válida
+  const allThirds = [...bestThirds];
+  Object.keys(SIM_GROUPS).forEach(g => {
+    if (!allThirds.find(t => t.group === g)) {
+      const name = classified[g]?.[2];
+      if (name) allThirds.push({name, group:g});
+    }
+  });
+  const thSlots = [
+    {mid:74, pools:['A','B','C','D','F']},
+    {mid:77, pools:['C','D','F','G','H']},
+    {mid:79, pools:['C','E','F','H','I']},
+    {mid:80, pools:['E','H','I','J','K']},
+    {mid:81, pools:['B','E','F','I','J']},
+    {mid:82, pools:['A','E','H','I','J']},
+    {mid:85, pools:['E','F','G','I','J']},
+    {mid:87, pools:['D','E','I','J','L']}
+  ];
+  const thAssign = {};
+  (function assign(idx, used) {
+    if (idx >= thSlots.length) return true;
+    const {mid, pools} = thSlots[idx];
+    for (const t of allThirds) {
+      if (!used.has(t.name) && pools.includes(t.group)) {
+        thAssign[mid] = t.name;
+        used.add(t.name);
+        if (assign(idx + 1, used)) return true;
+        delete thAssign[mid];
+        used.delete(t.name);
+      }
+    }
+    return false;
+  })(0, new Set());
+
+  simState = { currentRoundIdx:0, classified, bestThirds, thAssign, matchTeams:{}, matchResults:{} };
+
+  // Resolver cruces de 16avos
+  SIM_ROUNDS[0].ids.forEach(id => { simState.matchTeams[id] = simResolvePair(id); });
+
+  document.getElementById('simOverlay').classList.add('open');
+  simRender();
+}
+
+function simClose() {
+  document.getElementById('simOverlay').classList.remove('open');
+}
+
+function simResolvePair(matchId) {
+  const def = SIM_KO_DEFS.find(d => d.id === matchId);
+  if (!def) return {home:'?', away:'?'};
+  return { home: simResSlot(def.hs, matchId), away: simResSlot(def.as, matchId) };
+}
+
+function simResSlot(slot, mid) {
+  if (slot.t === 'g')  return simState.classified[slot.g]?.[slot.p-1] || '?';
+  if (slot.t === 'th') return simState.thAssign[mid] || '?';
+  if (slot.t === 'w')  return simState.matchResults[slot.mid]?.winner || '?';
+  if (slot.t === 'l')  return simState.matchResults[slot.mid]?.loser  || '?';
+  return '?';
+}
+
+function simPickWinner(matchId, winner) {
+  const teams = simState.matchTeams[matchId];
+  if (!teams) return;
+  simState.matchResults[matchId] = { winner, loser: teams.home === winner ? teams.away : teams.home };
+  simRender();
+}
+
+function simNextRound() {
+  const round = SIM_ROUNDS[simState.currentRoundIdx];
+  if (!round.ids.every(id => simState.matchResults[id])) return;
+  simState.currentRoundIdx++;
+  if (simState.currentRoundIdx < SIM_ROUNDS.length) {
+    SIM_ROUNDS[simState.currentRoundIdx].ids.forEach(id => { simState.matchTeams[id] = simResolvePair(id); });
+  }
+  simRender();
+}
+
+function simPrevRound() {
+  if (simState.currentRoundIdx > 0) { simState.currentRoundIdx--; simRender(); }
+}
+
+function simRender() {
+  // Barra de progreso
+  document.getElementById('simProg').innerHTML = SIM_ROUNDS.map((r,i) => {
+    const done = i < simState.currentRoundIdx;
+    const active = i === simState.currentRoundIdx;
+    const short = ['16avos','Octavos','Cuartos','Semis','Final'][i];
+    return `<div class="sim-step${done?' done':active?' active':''}">${done?'✓ ':''}${short}</div>`;
+  }).join('');
+
+  if (simState.currentRoundIdx >= SIM_ROUNDS.length) { simRenderSummary(); return; }
+  simRenderRound();
+}
+
+function simRenderRound() {
+  const ri = simState.currentRoundIdx;
+  const round = SIM_ROUNDS[ri];
+  // Final: primero partido 104 (la final), luego 103 (3er puesto)
+  const ids = round.name === 'Final' ? [104, 103] : round.ids;
+  const allPicked = round.ids.every(id => simState.matchResults[id]);
+
+  let html = `<div class="sim-round-title">${round.name}</div>`;
+  ids.forEach(id => {
+    const t = simState.matchTeams[id] || {home:'?', away:'?'};
+    const r = simState.matchResults[id];
+    const label = id === 103 ? `<div class="sim-sublabel">🥉 3er y 4º puesto</div>` : '';
+    const safe = s => s.replace(/'/g,"\\'");
+    html += `${label}
+    <div class="sim-match">
+      <div class="sim-team right">${flagImg(t.home,16)} <span>${t.home}</span></div>
+      <div class="sim-vs">vs</div>
+      <div class="sim-team"><span>${t.away}</span> ${flagImg(t.away,16)}</div>
+      <div style="display:flex;gap:.25rem;margin-left:.4rem">
+        <button class="sim-btn${r?.winner===t.home?' sel':''}" onclick="simPickWinner(${id},'${safe(t.home)}')">◀ ${t.home.split(' ')[0]}</button>
+        <button class="sim-btn${r?.winner===t.away?' sel':''}" onclick="simPickWinner(${id},'${safe(t.away)}')">${t.away.split(' ')[0]} ▶</button>
+      </div>
+    </div>`;
+  });
+
+  document.getElementById('simBody').innerHTML = html;
+  document.getElementById('simFoot').innerHTML = `
+    ${ri > 0 ? `<button class="btn" onclick="simPrevRound()">← Anterior</button>` : ''}
+    <button class="btn btn-accent" onclick="simNextRound()" ${allPicked?'':'disabled'}>
+      ${ri === SIM_ROUNDS.length-1 ? 'Ver resumen →' : 'Siguiente ronda →'}
+    </button>`;
+}
+
+function simRenderSummary() {
+  const big4 = ['España','Francia','Argentina','Brasil'];
+  const b4rounds = {};
+  big4.forEach(t => { b4rounds[t] = simTeamRound(t); });
+
+  const cont = simCountCont();
+
+  let html = `<div class="sim-round-title">Resultado de la simulación</div>
+  <div class="sim-card">
+    <h4>🌟 Big 4 — ronda máxima simulada</h4>
+    ${big4.map(t => `<div class="sim-row">${flagImg(t,16)} ${t}<span class="sim-badge">${b4rounds[t]}</span></div>`).join('')}
+  </div>
+  <div class="sim-card">
+    <h4>🌍 Equipos por continente</h4>
+    <div style="overflow-x:auto">
+    <table style="width:100%;border-collapse:collapse;font-size:.76rem">
+      <thead><tr style="color:var(--muted);font-size:.62rem">
+        <th style="text-align:left;padding:.25rem .4rem">Continente</th>
+        ${CONT_ROUNDS.map(r=>`<th style="padding:.25rem .4rem">${r.replace(' de Final','').replace('Semifinales','Semis')}</th>`).join('')}
+      </tr></thead><tbody>
+      ${CONTINENTS.map(c=>`<tr>
+        <td style="padding:.25rem .4rem">${c}</td>
+        ${CONT_ROUNDS.map(r=>`<td style="text-align:center;padding:.25rem .4rem">${cont[c]?.[r]||0}</td>`).join('')}
+      </tr>`).join('')}
+      </tbody>
+    </table></div>
+  </div>`;
+
+  const locked = porrasData[currentPlayer]?.locked;
+  const finalTeams = simState.matchTeams[104];
+  const finalRes = simState.matchResults[104];
+  if (finalTeams && finalRes) {
+    html += `<div class="sim-card">
+      <h4>🏆 Final simulada</h4>
+      <div class="sim-row">${flagImg(finalRes.winner,16)} <strong>${finalRes.winner}</strong> <span class="sim-badge">Campeón 🏆</span></div>
+      <div class="sim-row">${flagImg(finalRes.loser,16)} ${finalRes.loser} <span class="sim-badge">Subcampeón</span></div>
+    </div>`;
+  }
+
+  document.getElementById('simBody').innerHTML = html;
+  document.getElementById('simFoot').innerHTML = `
+    <button class="btn" onclick="simState.currentRoundIdx=${SIM_ROUNDS.length-1};simRender()">← Volver</button>
+    ${!locked ? `<button class="btn btn-accent" onclick="simApply()">✅ Aplicar a mi porra</button>` : ''}`;
+}
+
+function simTeamRound(team) {
+  const order = [
+    {name:'Final',           ids:[104]},
+    {name:'Semifinales',     ids:[101,102]},
+    {name:'Cuartos de Final',ids:[97,98,99,100]},
+    {name:'Octavos de Final',ids:[89,90,91,92,93,94,95,96]},
+    {name:'16avos de Final', ids:[73,74,75,76,77,78,79,80,81,82,83,84,85,86,87,88]}
+  ];
+  for (const {name,ids} of order) {
+    for (const id of ids) {
+      const t = simState.matchTeams[id];
+      if (t && (t.home === team || t.away === team)) return name;
+    }
+  }
+  return 'Fase de Grupos';
+}
+
+function simCountCont() {
+  const counts = {};
+  CONTINENTS.forEach(c => { counts[c] = {}; CONT_ROUNDS.forEach(r => counts[c][r] = 0); });
+  const map = [
+    ['16avos de Final', SIM_ROUNDS[0].ids],
+    ['Octavos de Final', SIM_ROUNDS[1].ids],
+    ['Cuartos de Final', SIM_ROUNDS[2].ids],
+    ['Semifinales',      SIM_ROUNDS[3].ids],
+    ['Final',            [104]]
+  ];
+  map.forEach(([round, ids]) => {
+    ids.forEach(id => {
+      const t = simState.matchTeams[id];
+      if (!t) return;
+      [t.home, t.away].forEach(team => {
+        if (team && team !== '?') {
+          const c = TEAM_CONTINENT[team];
+          if (c) counts[c][round]++;
+        }
+      });
+    });
+  });
+  return counts;
+}
+
+function simApply() {
+  if (!currentPlayer || porrasData[currentPlayer]?.locked) return;
+  const entry = porrasData[currentPlayer];
+
+  // Big4
+  ['España','Francia','Argentina','Brasil'].forEach(t => {
+    entry.big4[t] = simTeamRound(t);
+  });
+  setSelectVal('pickEspana',    entry.big4.España);
+  setSelectVal('pickFrancia',   entry.big4.Francia);
+  setSelectVal('pickArgentina', entry.big4.Argentina);
+  setSelectVal('pickBrasil',    entry.big4.Brasil);
+
+  // Continentes
+  const cont = simCountCont();
+  entry.continentPicks = {};
+  CONTINENTS.forEach(c => {
+    entry.continentPicks[c] = {};
+    CONT_ROUNDS.forEach(r => { entry.continentPicks[c][r] = cont[c][r]; });
+  });
+  buildContinentGrid(false);
+  updateRoundTotals();
+
+  // Campeón y subcampeón — siempre desde la simulación
+  const fr = simState.matchResults[104];
+  if (fr) {
+    entry.champion = fr.winner;
+    entry.runnerup = fr.loser;
+    setSelectVal('pickChampion', fr.winner);
+    setSelectVal('pickRunnerup', fr.loser);
+  }
+
+  simClose();
+  alert('✅ Simulación aplicada. Revisa los datos y edítalos si quieres antes de enviar.');
+}
+
 // INIT
 // ══════════════════════════════════════════════════════
 (async () => {
