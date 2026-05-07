@@ -1,6 +1,6 @@
 # Mundial 2026 - Seguimiento y Porra
 
-Aplicación web completa para seguir el Mundial de Fútbol 2026 y gestionar porras entre amigos. Sin frameworks, sin backend propio: HTML, CSS y JavaScript vanilla con sincronización en la nube vía JSONBin.
+Aplicación web completa para seguir el Mundial de Fútbol 2026 y gestionar porras entre amigos. Sin frameworks, sin backend propio: HTML, CSS y JavaScript vanilla con sincronización en la nube vía JSONBin. Instalable como app en móvil (PWA).
 
 **🌐 Acceso público (GitHub Pages):**
 - Seguimiento: https://dlopezm1977-gif.github.io/mundial2026/index.html
@@ -20,6 +20,7 @@ Organizada en cuatro pestañas:
 
 **Partidos**
 - Muestra los 104 partidos (72 de grupos + 32 de eliminatorias) ordenados por fase y fecha, con horarios en hora España
+- Dentro de cada día los partidos se ordenan por hora España de menor a mayor
 - El admin introduce los goles directamente; en partidos KO con empate se añade el resultado de penaltis
 - Logos de canal: DAZN siempre visible; TVE se activa automáticamente en el partido inaugural, todos los de España, y semis/final/tercer puesto (el admin puede marcarlo manualmente en cualquier otro)
 - Estadísticas: partidos jugados, goles totales, media por partido y barra de progreso; antes del inicio muestra cuenta atrás en directo hasta el partido inaugural
@@ -44,6 +45,7 @@ Organizada en cuatro pestañas:
 **General**
 - Sincronización con estado visible (cargando / sincronizado / error); fallback a localStorage sin conexión
 - Diseño responsive optimizado para móvil con breakpoints a 680 px y 480 px
+- Botón 📲 Instalar en el header con instrucciones paso a paso para instalar la app en Android e iOS
 
 ### 🎯 `porra2026.html` — Sistema de predicciones
 
@@ -152,6 +154,28 @@ Los usuarios sin login pueden ver resultados, clasificaciones, estadísticas y t
 
 ---
 
+## 📱 PWA — Instalación en móvil
+
+Ambas páginas son instalables como app nativa gracias al soporte PWA (manifest + service worker).
+
+### Android (Chrome)
+1. Abre la URL en Chrome
+2. Pulsa el menú ⋮ → "Añadir a pantalla de inicio"
+3. Confirma — el icono aparece en el launcher
+
+### iOS (Safari)
+1. Abre la URL en Safari
+2. Toca ⬆️ Compartir en la barra inferior
+3. Desliza y toca "Añadir a pantalla de inicio"
+4. Confirma — el icono aparece en el inicio
+
+> En algunos dispositivos Android Chrome muestra el banner de instalación automáticamente.
+> En iOS solo funciona desde Safari; Chrome y otros navegadores no permiten instalar la app.
+
+El service worker (`sw.js`) cachea los ficheros principales para permitir uso offline básico.
+
+---
+
 ## 🚀 Cómo usar
 
 ### Acceso público
@@ -165,9 +189,9 @@ Las dos páginas están desplegadas en GitHub Pages y accesibles desde cualquier
 
 ```bash
 # Servidor local (necesario para que funcione la API de JSONBin)
-python -m http.server 8000
-# → http://localhost:8000/index.html
-# → http://localhost:8000/porra2026.html
+python -m http.server 8080
+# → http://localhost:8080/index.html
+# → http://localhost:8080/porra2026.html
 ```
 
 ---
@@ -180,6 +204,7 @@ python -m http.server 8000
 | Gráficas | Chart.js 4.4 (CDN) |
 | Almacenamiento compartido | JSONBin (API REST) |
 | Persistencia local | localStorage (fallback offline) |
+| PWA | Web App Manifest + Service Worker (caché offline) |
 | Banderas | FlagCDN |
 | Fuentes | Google Fonts — Bebas Neue, DM Sans, DM Mono |
 | Diseño | Tema oscuro, gradientes sutiles, responsive (480 px / 680 px) |
@@ -251,9 +276,12 @@ La API key está configurada directamente en el código de cada fichero HTML.
 |---|---|
 | `index.html` | Seguimiento de partidos, clasificaciones de grupo y cuadro de eliminatorias |
 | `porra2026.html` | Sistema de predicciones y leaderboard |
-| `mensajes_whatsapp.txt` | Mensajes listos para compartir la porra por WhatsApp |
-| `DAZN.png` | Logo DAZN (usado en los match cards) |
-| `TVE.png` | Logo TVE (usado en los match cards) |
+| `manifest.json` | Manifiesto PWA (nombre, icono, colores, modo standalone) |
+| `sw.js` | Service worker — caché offline de los ficheros principales |
+| `icons/icon-192.png` | Icono de la app (192×192 px) para launcher y apple-touch-icon |
+| `assets/img/DAZN.png` | Logo DAZN (usado en los match cards) |
+| `assets/img/TVE.png` | Logo TVE (usado en los match cards) |
+| `docs/mensajes_whatsapp.txt` | Mensajes listos para compartir la porra por WhatsApp |
 
 ---
 
@@ -261,6 +289,7 @@ La API key está configurada directamente en el código de cada fichero HTML.
 
 - **Navegadores**: Chrome, Firefox, Safari, Edge (versiones modernas)
 - **Dispositivos**: desktop, tablet y móvil — diseño responsive con breakpoints a 680 px y 480 px
+- **Instalable como app** en Android (Chrome) e iOS (Safari) mediante PWA
 - **Requiere** conexión a internet para sincronización entre usuarios; sin conexión funciona en modo local (localStorage)
 
 ---
