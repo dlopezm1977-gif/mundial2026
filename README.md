@@ -46,6 +46,7 @@ Organizada en cuatro pestañas:
 - Sincronización con estado visible (cargando / sincronizado / error); fallback a localStorage sin conexión
 - Diseño responsive optimizado para móvil con breakpoints a 680 px y 480 px
 - Botón 📲 Instalar en el header con instrucciones paso a paso para instalar la app en Android e iOS
+- Botón 🎯 Porra en el header (morado) para navegar directamente a la página de predicciones
 
 ### 🎯 `porra2026.html` — Sistema de predicciones
 
@@ -54,7 +55,7 @@ Permite a cada participante crear su propia porra y competir en un leaderboard c
 **Flujo del formulario (en orden):**
 
 1. ⚽ **Resultados Fase de Grupos** — 72 partidos con filtro por grupo
-2. 🔮 **Simulador de eliminatorias** — calcula los cruces del cuadro KO a partir de los resultados de grupos; el usuario elige el ganador de cada partido ronda a ronda y al terminar rellena automáticamente campeón, subcampeón, Big 4 y equipos por continente (siempre editable antes de enviar)
+2. 🔮 **Simulador de eliminatorias** — calcula los cruces del cuadro KO a partir de los resultados de grupos; el usuario selecciona el ganador tocando directamente la tarjeta del equipo (con bandera), ronda a ronda; al terminar rellena automáticamente campeón, subcampeón, Big 4 y equipos por continente (siempre editable antes de enviar)
 3. 🏆 **Pronósticos especiales** — campeón (200 pts), subcampeón (150 pts) y ronda máxima del Big 4 — España, Francia, Argentina y Brasil — (100 pts c/u)
 4. 🌍 **Equipos por continente** — cuántos equipos de cada continente llegan a cada ronda eliminatoria (50 pts por acierto exacto)
 
@@ -63,7 +64,9 @@ Permite a cada participante crear su propia porra y competir en un leaderboard c
 - **Grupos de participantes**: cada usuario puede asignarse a un grupo (trabajo, familia, amigos…) al registrarse o en cualquier momento; el admin también puede asignar grupos desde el panel de administración
 - **Bloqueo automático**: la porra se bloquea al enviar; se puede desbloquear y editar hasta el **10 de junio de 2026 a las 23:59 (hora España)**; después queda bloqueada definitivamente
 - **Sincronización multiusuario**: varios participantes pueden rellenar su porra a la vez sin conflictos
-- **Diseño responsive**: optimizado para móvil, incluyendo el formulario de nombre y la clasificación
+- **Diseño responsive**: optimizado para móvil, incluyendo el formulario de nombre, la clasificación y el simulador
+- Botón 📲 Instalar en el header con instrucciones paso a paso para instalar la app en Android e iOS
+- Botón ⚽ Resultados en el header (morado) para navegar directamente a la página de seguimiento
 
 **Pestaña Clasificación:**
 
