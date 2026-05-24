@@ -334,8 +334,9 @@
     .lb-pos{font-size:1.2rem;}
     .lb-col .val{font-size:1rem;}
     .lb-col .lbl{font-size:.46rem;}
+    .lb-row > div:nth-child(2){min-width:0;overflow:hidden;}
     .lb-name{font-size:.8rem;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
-    .lb-sub{font-size:.54rem;}
+    .lb-sub{font-size:.54rem;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
     /* Sub-tabs más compactas */
     .sub-tab{padding:.45rem .7rem;font-size:.6rem;}
   }
@@ -376,7 +377,7 @@
   <div style="display:flex;align-items:center;gap:.75rem;flex-wrap:wrap">
     <span id="syncStatus">🔄 Cargando…</span>
     <button class="btn" onclick="forceSyncFromRemote()">↺ Actualizar</button>
-    <a href="index.html" class="btn" style="text-decoration:none" title="Volver a resultados">⚽ Resultados</a>
+    <a href="index.html" class="btn" style="text-decoration:none;background:var(--purple);color:#fff;border-color:var(--purple);font-weight:700" title="Volver a resultados">⚽ Resultados</a>
     <span id="adminActions" style="display:none">
       <button class="btn" onclick="openGroupAdmin()">👥 Gestionar grupos</button>
     </span>
