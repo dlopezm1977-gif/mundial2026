@@ -232,6 +232,38 @@ La API key está configurada directamente en el código de cada fichero HTML.
 
 ---
 
+## 📢 Banner de avisos
+
+Ambas páginas incluyen un banner configurable que aparece entre el header y las pestañas. Sirve para avisar a los usuarios de incidencias, mantenimiento o cualquier mensaje puntual sin necesidad de tocar el código de la app.
+
+### Configuración manual
+
+Edita el objeto `BANNER_CONFIG` en cada fichero HTML (sección `// ── BANNER CONFIG`, justo debajo de `// ── JSONBIN CONFIG`):
+
+```javascript
+const BANNER_CONFIG = {
+  visible: true,       // true = mostrar | false = ocultar
+  type: 'warning',     // 'info' | 'warning' | 'error' | 'success'
+  message: 'Estamos actualizando los datos, vuelve en unos minutos.',
+  dismissible: true,   // true = el usuario puede cerrarlo con la ✕
+};
+```
+
+| `type` | Color | Uso recomendado |
+|---|---|---|
+| `warning` | Amarillo | Avisos generales o mantenimiento |
+| `error` | Rojo | Problemas críticos o sin conexión |
+| `info` | Azul | Información neutral |
+| `success` | Verde | Confirmaciones o buenas noticias |
+
+### Comportamiento automático
+
+Si `loadResults()` / `loadAll()` falla al conectar con JSONBin, el banner de error aparece **automáticamente** con el mensaje "Sin conexión con el servidor de datos…", sin necesidad de configurar nada.
+
+Cuando la conexión se recupera (al pulsar **↺ Actualizar**), el banner automático desaparece y el estado vuelve al definido en `BANNER_CONFIG`.
+
+---
+
 ## 📊 Estructura de datos
 
 ### Resultados (`index.html`)
