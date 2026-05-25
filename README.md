@@ -245,9 +245,17 @@ const BANNER_CONFIG = {
   visible: true,       // true = mostrar | false = ocultar
   type: 'warning',     // 'info' | 'warning' | 'error' | 'success'
   message: 'Estamos actualizando los datos, vuelve en unos minutos.',
-  dismissible: true,   // true = el usuario puede cerrarlo con la ✕
+  dismissible: false,  // true = el usuario puede cerrarlo con la ✕
+  ticker: true,        // true = texto en movimiento estilo rótulo televisivo
 };
 ```
+
+| Propiedad | Valores | Descripción |
+|---|---|---|
+| `visible` | `true` / `false` | Muestra u oculta el banner |
+| `type` | `'info'` · `'warning'` · `'error'` · `'success'` | Color del banner |
+| `dismissible` | `true` / `false` | Si el usuario puede cerrarlo con la ✕ |
+| `ticker` | `true` / `false` | Texto estático o desplazándose en bucle |
 
 | `type` | Color | Uso recomendado |
 |---|---|---|
@@ -258,9 +266,11 @@ const BANNER_CONFIG = {
 
 ### Comportamiento automático
 
-Si `loadResults()` / `loadAll()` falla al conectar con JSONBin, el banner de error aparece **automáticamente** con el mensaje "Sin conexión con el servidor de datos…", sin necesidad de configurar nada.
+Si `loadResults()` / `loadAll()` falla al conectar con JSONBin y **no hay banner manual configurado** (`visible: false` o `message` vacío), el banner de error aparece automáticamente con el mensaje "Sin conexión con el servidor de datos…".
 
-Cuando la conexión se recupera (al pulsar **↺ Actualizar**), el banner automático desaparece y el estado vuelve al definido en `BANNER_CONFIG`.
+Si ya hay un banner manual activo, este tiene prioridad y el automático no lo sobrescribe.
+
+Cuando la conexión se recupera (al pulsar **↺ Actualizar**), el estado vuelve al definido en `BANNER_CONFIG`.
 
 ---
 

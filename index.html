@@ -308,7 +308,10 @@
   .app-banner.warning{background:rgba(232,200,74,.09);border-bottom-color:rgba(232,200,74,.25);color:var(--accent);}
   .app-banner.error{background:rgba(239,68,68,.1);border-bottom-color:rgba(239,68,68,.25);color:#fca5a5;}
   .app-banner.success{background:rgba(34,197,94,.08);border-bottom-color:rgba(34,197,94,.2);color:#86efac;}
-  .banner-msg{flex:1;}
+  .banner-track{flex:1;overflow:hidden;min-width:0;}
+  .banner-msg{display:inline-block;white-space:nowrap;}
+  .app-banner.ticker .banner-msg{animation:banner-ticker 25s linear infinite;}
+  @keyframes banner-ticker{from{transform:translateX(100vw)}to{transform:translateX(-100%)}}
   .banner-close{background:none;border:none;color:inherit;opacity:.55;cursor:pointer;font-size:1rem;
     line-height:1;padding:.1rem .35rem;border-radius:3px;transition:opacity .15s;flex-shrink:0;}
   .banner-close:hover{opacity:1;}
@@ -373,7 +376,7 @@ function switchInstall(id,btn){
 </script>
 
 <div id="appBanner" class="app-banner hidden" role="alert">
-  <span class="banner-msg"></span>
+  <div class="banner-track"><span class="banner-msg"></span></div>
   <button class="banner-close" onclick="hideBanner()" aria-label="Cerrar aviso">✕</button>
 </div>
 
@@ -704,12 +707,13 @@ const BANNER_CONFIG = {
   visible: true,
   type: 'error',
   message: 'Problemas de conexión con la base de datos. Es posible que los resultados no estén actualizados.',
-  dismissible: true,
+  dismissible: false,
+  ticker: true,   // true = texto en movimiento estilo rótulo
 };
-function showBanner(type, message, dismissible=true) {
+function showBanner(type, message, dismissible=true, ticker=false) {
   const el = document.getElementById('appBanner');
   if (!el) return;
-  el.className = 'app-banner ' + type;
+  el.className = 'app-banner ' + type + (ticker ? ' ticker' : '');
   el.querySelector('.banner-msg').textContent = message;
   el.querySelector('.banner-close').style.display = dismissible ? '' : 'none';
 }
@@ -719,7 +723,7 @@ function hideBanner() {
 }
 function initBanner() {
   if (BANNER_CONFIG.visible && BANNER_CONFIG.message) {
-    showBanner(BANNER_CONFIG.type, BANNER_CONFIG.message, BANNER_CONFIG.dismissible);
+    showBanner(BANNER_CONFIG.type, BANNER_CONFIG.message, BANNER_CONFIG.dismissible, BANNER_CONFIG.ticker);
   }
 }
 
@@ -743,7 +747,7 @@ async function loadResults() {
     tveMatches = results.tveMatches || JSON.parse(localStorage.getItem('mundial2026_tve') || '{}');
     isAdmin = localStorage.getItem('admin_logged_in') === 'true';
     setSyncStatus('ok');
-    if (BANNER_CONFIG.visible && BANNER_CONFIG.message) showBanner(BANNER_CONFIG.type, BANNER_CONFIG.message, BANNER_CONFIG.dismissible);
+    if (BANNER_CONFIG.visible && BANNER_CONFIG.message) showBanner(BANNER_CONFIG.type, BANNER_CONFIG.message, BANNER_CONFIG.dismissible, BANNER_CONFIG.ticker);
     else hideBanner();
   } catch(e) {
     console.error('JSONBin load error:', e);
@@ -752,7 +756,7 @@ async function loadResults() {
     favoriteMatches = JSON.parse(localStorage.getItem('mundial2026_favorites') || '{}');
     tveMatches = JSON.parse(localStorage.getItem('mundial2026_tve') || '{}');
     isAdmin = localStorage.getItem('admin_logged_in') === 'true';
-    showBanner('error', 'Sin conexión con el servidor de datos. Es posible que los resultados no estén actualizados.');
+    if (!BANNER_CONFIG.visible || !BANNER_CONFIG.message) showBanner('error', 'Sin conexión con el servidor de datos. Es posible que los resultados no estén actualizados.');
   }
 }
 
