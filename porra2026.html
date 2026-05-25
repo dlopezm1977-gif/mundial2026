@@ -379,6 +379,19 @@
   .install-note{margin-top:1rem;font-size:.75rem;color:var(--muted);border-top:1px solid var(--border);padding-top:.75rem;}
   .install-close{position:absolute;top:.75rem;right:.75rem;background:none;border:none;color:var(--muted);font-size:1.2rem;cursor:pointer;line-height:1;}
   .install-close:hover{color:var(--text);}
+  /* BANNER */
+  .app-banner{display:flex;align-items:center;gap:1rem;padding:.6rem 2rem;
+    font-family:'DM Mono',monospace;font-size:.73rem;letter-spacing:.03em;
+    border-bottom:1px solid transparent;}
+  .app-banner.hidden{display:none;}
+  .app-banner.info{background:rgba(59,130,246,.1);border-bottom-color:rgba(59,130,246,.25);color:#93c5fd;}
+  .app-banner.warning{background:rgba(232,200,74,.09);border-bottom-color:rgba(232,200,74,.25);color:var(--accent);}
+  .app-banner.error{background:rgba(239,68,68,.1);border-bottom-color:rgba(239,68,68,.25);color:#fca5a5;}
+  .app-banner.success{background:rgba(34,197,94,.08);border-bottom-color:rgba(34,197,94,.2);color:#86efac;}
+  .banner-msg{flex:1;}
+  .banner-close{background:none;border:none;color:inherit;opacity:.55;cursor:pointer;font-size:1rem;
+    line-height:1;padding:.1rem .35rem;border-radius:3px;transition:opacity .15s;flex-shrink:0;}
+  .banner-close:hover{opacity:1;}
 </style>
 </head>
 <body>
@@ -427,6 +440,11 @@
       <p class="install-note">Solo funciona desde Safari. Chrome y otros navegadores en iOS no permiten instalar la app.</p>
     </div>
   </div>
+</div>
+
+<div id="appBanner" class="app-banner hidden" role="alert">
+  <span class="banner-msg"></span>
+  <button class="banner-close" onclick="hideBanner()" aria-label="Cerrar aviso">✕</button>
 </div>
 
 <div class="tabs">
@@ -731,6 +749,31 @@ const PORRA_URL  = `https://api.jsonbin.io/v3/b/${PORRA_BIN_ID}`;
 const MASTER_URL = `https://api.jsonbin.io/v3/b/${MASTER_BIN_ID}`;
 const HEADERS = {'Content-Type':'application/json','X-Access-Key':BIN_KEY};
 
+// ── BANNER CONFIG ─────────────────────────────────────
+// visible: true/false  |  type: 'info' | 'warning' | 'error' | 'success'
+const BANNER_CONFIG = {
+  visible: true,
+  type: 'error',
+  message: 'Problemas de conexión con la base de datos. Es posible que los resultados no estén actualizados.',
+  dismissible: true,
+};
+function showBanner(type, message, dismissible=true) {
+  const el = document.getElementById('appBanner');
+  if (!el) return;
+  el.className = 'app-banner ' + type;
+  el.querySelector('.banner-msg').textContent = message;
+  el.querySelector('.banner-close').style.display = dismissible ? '' : 'none';
+}
+function hideBanner() {
+  const el = document.getElementById('appBanner');
+  if (el) el.className = 'app-banner hidden';
+}
+function initBanner() {
+  if (BANNER_CONFIG.visible && BANNER_CONFIG.message) {
+    showBanner(BANNER_CONFIG.type, BANNER_CONFIG.message, BANNER_CONFIG.dismissible);
+  }
+}
+
 // Fecha límite para modificar la porra: 10 de junio de 2026 a las 23:59 (hora España)
 const DEADLINE = new Date('2026-06-10T23:59:00+02:00');
 function isEditable() { return new Date() < DEADLINE; }
@@ -909,9 +952,12 @@ async function loadAll() {
   try {
     [porrasData, masterData] = await Promise.all([fetchBin(PORRA_URL), fetchBin(MASTER_URL)]);
     setSyncStatus('ok');
+    if (BANNER_CONFIG.visible && BANNER_CONFIG.message) showBanner(BANNER_CONFIG.type, BANNER_CONFIG.message, BANNER_CONFIG.dismissible);
+    else hideBanner();
   } catch(e) {
     setSyncStatus('error');
     console.error(e);
+    showBanner('error', 'Sin conexión con el servidor de datos. Es posible que los resultados no estén actualizados.');
   }
 }
 async function savePorras() {
@@ -2599,6 +2645,7 @@ function simApply() {
   buildSelects();
   buildGroupFilter();
   initAdminUI();
+  initBanner();
   await loadAll();
 })();
 </script>
