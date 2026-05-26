@@ -230,7 +230,18 @@ Los datos se sincronizan en Firebase Realtime Database en dos nodos separados:
 
 **URL base:** `https://mundial2026-53420-default-rtdb.europe-west1.firebasedatabase.app`
 
-La URL está configurada directamente en el código de cada fichero HTML como `FIREBASE_URL`. No requiere API key: el acceso se controla mediante las reglas de seguridad de Firebase.
+La URL y la configuración del SDK están en el código de cada fichero HTML. La seguridad se controla mediante Firebase Auth y las reglas de la base de datos:
+
+```json
+{
+  "rules": {
+    ".read": true,
+    ".write": "auth != null"
+  }
+}
+```
+
+Lectura pública para todos los usuarios; escritura solo para el admin autenticado con Firebase Authentication (Email/Password). El admin se gestiona desde Firebase Console → Authentication → Users, sin contraseñas hardcodeadas en el código.
 
 ---
 

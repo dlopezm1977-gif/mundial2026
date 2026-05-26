@@ -13,6 +13,8 @@
 <link rel="apple-touch-icon" href="icons/icon-192.png">
 <link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=DM+Sans:wght@300;400;500;600&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet">
 <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.4/dist/chart.umd.min.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-auth-compat.js"></script>
 <style>
   :root{
     --bg:#0a0e1a; --surface:#111827; --surface2:#1a2236; --border:#1f2d4a;
@@ -700,6 +702,25 @@
 
 </div><!-- /container -->
 
+<!-- ADMIN LOGIN MODAL -->
+<div class="modal-overlay" id="adminLoginModal" onclick="if(event.target===this)this.classList.remove('open')">
+  <div class="modal" style="max-width:360px">
+    <h3>Acceso administrador</h3>
+    <div style="display:flex;flex-direction:column;gap:12px;margin:16px 0">
+      <input id="adminEmail" type="email" placeholder="Email" autocomplete="username"
+        style="padding:10px;border-radius:8px;border:1px solid var(--border);background:var(--card);color:var(--text);font-size:14px">
+      <input id="adminPass" type="password" placeholder="Contraseña" autocomplete="current-password"
+        style="padding:10px;border-radius:8px;border:1px solid var(--border);background:var(--card);color:var(--text);font-size:14px"
+        onkeydown="if(event.key==='Enter')submitAdminLogin()">
+      <p id="adminLoginError" style="color:var(--red);font-size:13px;margin:0;min-height:18px"></p>
+    </div>
+    <div class="modal-actions">
+      <button class="btn" onclick="document.getElementById('adminLoginModal').classList.remove('open')">Cancelar</button>
+      <button class="btn btn-accent" onclick="submitAdminLogin()">Entrar</button>
+    </div>
+  </div>
+</div>
+
 <!-- DETAIL MODAL -->
 <div class="modal-overlay" id="detailModal">
   <div class="modal">
@@ -745,6 +766,16 @@ function switchInstall(id,btn){
 // ══════════════════════════════════════════════════════
 // CONFIG
 // ══════════════════════════════════════════════════════
+firebase.initializeApp({
+  apiKey: "AIzaSyBCo618BZWbV7YSocRMdpckFacYyYESnlU",
+  authDomain: "mundial2026-53420.firebaseapp.com",
+  databaseURL: "https://mundial2026-53420-default-rtdb.europe-west1.firebasedatabase.app",
+  projectId: "mundial2026-53420",
+  storageBucket: "mundial2026-53420.firebasestorage.app",
+  messagingSenderId: "295447704159",
+  appId: "1:295447704159:web:8022751b11647a6122a1ea"
+});
+const firebaseAuth = firebase.auth();
 const FIREBASE_URL = 'https://mundial2026-53420-default-rtdb.europe-west1.firebasedatabase.app';
 const PORRA_URL  = FIREBASE_URL + '/porras';
 const MASTER_URL = FIREBASE_URL + '/results';
@@ -944,7 +975,13 @@ async function fetchBin(url) {
   return d || {};
 }
 async function putBin(url, data) {
-  const res = await fetch(url + '.json', {method:'PUT', headers:{'Content-Type':'application/json'}, body:JSON.stringify(data)});
+  const user = firebaseAuth.currentUser;
+  const token = user ? await user.getIdToken() : null;
+  const res = await fetch(url + '.json' + (token ? '?auth=' + token : ''), {
+    method: 'PUT',
+    headers: {'Content-Type': 'application/json'},
+    body: JSON.stringify(data)
+  });
   if (!res.ok) throw new Error(res.status);
 }
 
@@ -2213,32 +2250,37 @@ let activeSubTab = 'general';
 let activeLeaderboardGroup = '';
 let isAdmin = false;
 
-const ADMIN_PASSWORD = 'admin2026';
+let authResolved = false;
+const authReady = new Promise(resolve => {
+  firebaseAuth.onAuthStateChanged(user => {
+    isAdmin = !!user;
+    const btn = document.getElementById('adminBtn');
+    const actions = document.getElementById('adminActions');
+    if (btn) btn.textContent = isAdmin ? '🚪 Logout' : '🔐 Admin';
+    if (actions) actions.style.display = isAdmin ? 'flex' : 'none';
+    if (!authResolved) { authResolved = true; resolve(user); }
+  });
+});
 
 function handleAdmin() {
   if (isAdmin) {
-    isAdmin = false;
-    localStorage.removeItem('admin_logged_in');
-    document.getElementById('adminActions').style.display = 'none';
-    document.getElementById('adminBtn').textContent = '🔐 Admin';
+    firebaseAuth.signOut();
   } else {
-    const pass = prompt('Contraseña de admin:');
-    if (pass === ADMIN_PASSWORD) {
-      isAdmin = true;
-      localStorage.setItem('admin_logged_in', 'true');
-      document.getElementById('adminActions').style.display = 'flex';
-      document.getElementById('adminBtn').textContent = '🚪 Logout';
-    } else {
-      alert('Contraseña incorrecta.');
-    }
+    document.getElementById('adminLoginError').textContent = '';
+    document.getElementById('adminEmail').value = '';
+    document.getElementById('adminPass').value = '';
+    document.getElementById('adminLoginModal').classList.add('open');
   }
 }
 
-function initAdminUI() {
-  isAdmin = localStorage.getItem('admin_logged_in') === 'true';
-  if (isAdmin) {
-    document.getElementById('adminActions').style.display = 'flex';
-    document.getElementById('adminBtn').textContent = '🚪 Logout';
+async function submitAdminLogin() {
+  const email = document.getElementById('adminEmail').value.trim();
+  const pass  = document.getElementById('adminPass').value;
+  try {
+    await firebaseAuth.signInWithEmailAndPassword(email, pass);
+    document.getElementById('adminLoginModal').classList.remove('open');
+  } catch(e) {
+    document.getElementById('adminLoginError').textContent = 'Credenciales incorrectas.';
   }
 }
 
@@ -2645,8 +2687,8 @@ function simApply() {
 (async () => {
   buildSelects();
   buildGroupFilter();
-  initAdminUI();
   initBanner();
+  await authReady;
   await loadAll();
 })();
 </script>

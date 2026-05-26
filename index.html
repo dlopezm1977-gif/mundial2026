@@ -12,6 +12,8 @@
 <meta name="apple-mobile-web-app-title" content="Mundial 2026">
 <link rel="apple-touch-icon" href="icons/icon-192.png">
 <link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=DM+Sans:wght@300;400;500;600&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet">
+<script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-auth-compat.js"></script>
 <style>
   :root {
     --bg:#0a0e1a; --surface:#111827; --surface2:#1a2236; --border:#1f2d4a;
@@ -418,6 +420,25 @@ function switchInstall(id,btn){
   </div>
 </div>
 
+<!-- ADMIN LOGIN MODAL -->
+<div class="modal-overlay" id="adminLoginModal" onclick="if(event.target===this)this.classList.remove('open')">
+  <div class="modal" style="max-width:360px">
+    <h3>Acceso administrador</h3>
+    <div style="display:flex;flex-direction:column;gap:12px;margin:16px 0">
+      <input id="adminEmail" type="email" placeholder="Email" autocomplete="username"
+        style="padding:10px;border-radius:8px;border:1px solid var(--border);background:var(--card);color:var(--text);font-size:14px">
+      <input id="adminPass" type="password" placeholder="Contraseña" autocomplete="current-password"
+        style="padding:10px;border-radius:8px;border:1px solid var(--border);background:var(--card);color:var(--text);font-size:14px"
+        onkeydown="if(event.key==='Enter')submitAdminLogin()">
+      <p id="adminLoginError" style="color:var(--red);font-size:13px;margin:0;min-height:18px"></p>
+    </div>
+    <div class="modal-actions">
+      <button class="btn" onclick="document.getElementById('adminLoginModal').classList.remove('open')">Cancelar</button>
+      <button class="btn btn-accent" onclick="submitAdminLogin()">Entrar</button>
+    </div>
+  </div>
+</div>
+
 <!-- IMPORT MODAL -->
 <div class="modal-overlay" id="importModal">
   <div class="modal">
@@ -489,7 +510,6 @@ const DAZN_LOGO = '<img src="assets/img/DAZN.png" alt="DAZN" style="height:12px;
 const TVE_LOGO = '<img src="assets/img/TVE.png" alt="TVE" style="height:12px; vertical-align:middle;">';
 
 // ── ADMIN ───────────────────────────────────────────────
-const ADMIN_PASSWORD = 'admin2026';
 let isAdmin = false;
 
 // ── GROUPS ─────────────────────────────────────────────
@@ -696,7 +716,30 @@ let tveMatches = {};
 let showTveOnly = false;
 
 // ── FIREBASE CONFIG ───────────────────────────────────
+firebase.initializeApp({
+  apiKey: "AIzaSyBCo618BZWbV7YSocRMdpckFacYyYESnlU",
+  authDomain: "mundial2026-53420.firebaseapp.com",
+  databaseURL: "https://mundial2026-53420-default-rtdb.europe-west1.firebasedatabase.app",
+  projectId: "mundial2026-53420",
+  storageBucket: "mundial2026-53420.firebasestorage.app",
+  messagingSenderId: "295447704159",
+  appId: "1:295447704159:web:8022751b11647a6122a1ea"
+});
+const firebaseAuth = firebase.auth();
 const FIREBASE_URL = 'https://mundial2026-53420-default-rtdb.europe-west1.firebasedatabase.app';
+
+let authResolved = false;
+const authReady = new Promise(resolve => {
+  firebaseAuth.onAuthStateChanged(user => {
+    isAdmin = !!user;
+    const btn = document.getElementById('adminBtn');
+    const actions = document.getElementById('adminActions');
+    if (btn) btn.innerText = isAdmin ? '🚪 Logout' : '🔐 Admin';
+    if (actions) actions.style.display = isAdmin ? 'flex' : 'none';
+    if (!authResolved) { authResolved = true; resolve(user); }
+    else { buildFilterBar(); renderMatches(); }
+  });
+});
 
 // ── BANNER CONFIG ─────────────────────────────────────
 // visible: true/false  |  type: 'info' | 'warning' | 'error' | 'success'
@@ -742,7 +785,6 @@ async function loadResults() {
     results = data || {};
     favoriteMatches = results.favoriteMatches || JSON.parse(localStorage.getItem('mundial2026_favorites') || '{}');
     tveMatches = results.tveMatches || JSON.parse(localStorage.getItem('mundial2026_tve') || '{}');
-    isAdmin = localStorage.getItem('admin_logged_in') === 'true';
     setSyncStatus('ok');
     if (BANNER_CONFIG.visible && BANNER_CONFIG.message) showBanner(BANNER_CONFIG.type, BANNER_CONFIG.message, BANNER_CONFIG.dismissible, BANNER_CONFIG.ticker);
     else hideBanner();
@@ -752,7 +794,6 @@ async function loadResults() {
     results = {};
     favoriteMatches = JSON.parse(localStorage.getItem('mundial2026_favorites') || '{}');
     tveMatches = JSON.parse(localStorage.getItem('mundial2026_tve') || '{}');
-    isAdmin = localStorage.getItem('admin_logged_in') === 'true';
     if (!BANNER_CONFIG.visible || !BANNER_CONFIG.message) showBanner('error', 'Sin conexión con el servidor de datos. Es posible que los resultados no estén actualizados.');
   }
 }
@@ -762,7 +803,9 @@ async function saveResults() {
   isSyncing = true;
   setSyncStatus('saving');
   try {
-    const res = await fetch(FIREBASE_URL + '/results.json', {
+    const user = firebaseAuth.currentUser;
+    const token = user ? await user.getIdToken() : null;
+    const res = await fetch(FIREBASE_URL + '/results.json' + (token ? '?auth=' + token : ''), {
       method: 'PUT',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ ...results, favoriteMatches, tveMatches })
@@ -1239,28 +1282,23 @@ async function toggleTVE(matchId){
 
 function handleAdmin(){
   if (isAdmin) {
-    // logout
-    isAdmin = false;
-    localStorage.removeItem('admin_logged_in');
-    document.getElementById('adminActions').style.display = 'none';
-    document.getElementById('adminBtn').innerText = '🔐 Admin';
-    buildFilterBar();
-    renderMatches();
-    alert('Deslogueado como admin.');
+    firebaseAuth.signOut();
   } else {
-    // login
-    const pass = prompt('Contraseña de admin:');
-    if (pass === ADMIN_PASSWORD) {
-      isAdmin = true;
-      localStorage.setItem('admin_logged_in', 'true');
-      document.getElementById('adminActions').style.display = 'flex';
-      document.getElementById('adminBtn').innerText = '🚪 Logout';
-      buildFilterBar();
-      renderMatches();
-      alert('Logueado como admin. Ahora puedes editar resultados y marcar TVE.');
-    } else {
-      alert('Contraseña incorrecta');
-    }
+    document.getElementById('adminLoginError').textContent = '';
+    document.getElementById('adminEmail').value = '';
+    document.getElementById('adminPass').value = '';
+    document.getElementById('adminLoginModal').classList.add('open');
+  }
+}
+
+async function submitAdminLogin() {
+  const email = document.getElementById('adminEmail').value.trim();
+  const pass  = document.getElementById('adminPass').value;
+  try {
+    await firebaseAuth.signInWithEmailAndPassword(email, pass);
+    document.getElementById('adminLoginModal').classList.remove('open');
+  } catch(e) {
+    document.getElementById('adminLoginError').textContent = 'Credenciales incorrectas.';
   }
 }
 
@@ -1500,14 +1538,10 @@ const SEED_RESULTS = {"1":{"home":2,"away":0},"2":{"home":1,"away":1},"3":{"home
   updateStats();
   initBanner();
 
+  await authReady;
+
   // Cargar datos desde Firebase
   await loadResults();
-
-  if (isAdmin) {
-    document.getElementById('adminActions').style.display = 'flex';
-    document.getElementById('adminBtn').innerText = '🚪 Logout';
-    buildFilterBar();
-  }
 
   // Solo cargar el seed la primera vez que se usa el bin (nunca tras un reset)
   // if (!results._seeded) {
