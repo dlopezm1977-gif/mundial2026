@@ -745,21 +745,18 @@ function switchInstall(id,btn){
 // ══════════════════════════════════════════════════════
 // CONFIG
 // ══════════════════════════════════════════════════════
-const PORRA_BIN_ID  = '69e107f9aaba882197079212';
-const MASTER_BIN_ID = '69e0e848aaba88219706dc21';
-const BIN_KEY = '$2a$10$qpwc.nvxlI/yoE7UUhUBtel9PTaTv35xxveuxuHoiFe/eK7GJjpsG';
-const PORRA_URL  = `https://api.jsonbin.io/v3/b/${PORRA_BIN_ID}`;
-const MASTER_URL = `https://api.jsonbin.io/v3/b/${MASTER_BIN_ID}`;
-const HEADERS = {'Content-Type':'application/json','X-Access-Key':BIN_KEY};
+const FIREBASE_URL = 'https://mundial2026-53420-default-rtdb.europe-west1.firebasedatabase.app';
+const PORRA_URL  = FIREBASE_URL + '/porras';
+const MASTER_URL = FIREBASE_URL + '/results';
 
 // ── BANNER CONFIG ─────────────────────────────────────
 // visible: true/false  |  type: 'info' | 'warning' | 'error' | 'success'
 const BANNER_CONFIG = {
-  visible: true,
-  type: 'error',
-  message: 'Problemas de conexión con la base de datos. Es posible que los resultados no estén actualizados.',
-  dismissible: false,
-  ticker: true,   // true = texto en movimiento estilo rótulo
+  visible: false,
+  type: 'info',
+  message: '',
+  dismissible: true,
+  ticker: false,
 };
 function showBanner(type, message, dismissible=true, ticker=false) {
   const el = document.getElementById('appBanner');
@@ -938,16 +935,16 @@ function setSyncStatus(state, msg='') {
 }
 
 // ══════════════════════════════════════════════════════
-// JSONBIN I/O
+// FIREBASE I/O
 // ══════════════════════════════════════════════════════
 async function fetchBin(url) {
-  const res = await fetch(url + '/latest', {headers:{'X-Access-Key':BIN_KEY}});
+  const res = await fetch(url + '.json');
   if (!res.ok) throw new Error(res.status);
   const d = await res.json();
-  return d.record || {};
+  return d || {};
 }
 async function putBin(url, data) {
-  const res = await fetch(url, {method:'PUT', headers:HEADERS, body:JSON.stringify(data)});
+  const res = await fetch(url + '.json', {method:'PUT', headers:{'Content-Type':'application/json'}, body:JSON.stringify(data)});
   if (!res.ok) throw new Error(res.status);
 }
 

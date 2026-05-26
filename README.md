@@ -1,6 +1,6 @@
 # Mundial 2026 - Seguimiento y Porra
 
-Aplicación web completa para seguir el Mundial de Fútbol 2026 y gestionar porras entre amigos. Sin frameworks, sin backend propio: HTML, CSS y JavaScript vanilla con sincronización en la nube vía JSONBin. Instalable como app en móvil (PWA).
+Aplicación web completa para seguir el Mundial de Fútbol 2026 y gestionar porras entre amigos. Sin frameworks, sin backend propio: HTML, CSS y JavaScript vanilla con sincronización en la nube vía Firebase Realtime Database. Instalable como app en móvil (PWA).
 
 **🌐 Acceso público (GitHub Pages):**
 - Seguimiento: https://dlopezm1977-gif.github.io/mundial2026/index.html
@@ -195,7 +195,7 @@ Las dos páginas están desplegadas en GitHub Pages y accesibles desde cualquier
 ### Desarrollo local
 
 ```bash
-# Servidor local (necesario para que funcione la API de JSONBin)
+# Servidor local (necesario para evitar restricciones CORS)
 python -m http.server 8080
 # → http://localhost:8080/index.html
 # → http://localhost:8080/porra2026.html
@@ -209,7 +209,7 @@ python -m http.server 8080
 |---|---|
 | Frontend | HTML5 + CSS3 + JavaScript ES6+ (sin frameworks) |
 | Gráficas | Chart.js 4.4 (CDN) |
-| Almacenamiento compartido | JSONBin (API REST) |
+| Almacenamiento compartido | Firebase Realtime Database (REST API) |
 | Persistencia local | localStorage (fallback offline) |
 | PWA | Web App Manifest + Service Worker (caché offline) |
 | Banderas | FlagCDN |
@@ -219,16 +219,18 @@ python -m http.server 8080
 
 ---
 
-## 🔧 Configuración (JSONBin)
+## 🔧 Configuración (Firebase)
 
-Los datos se sincronizan en dos bins separados:
+Los datos se sincronizan en Firebase Realtime Database en dos nodos separados:
 
-| | Bin ID |
-|---|---|
-| Resultados y TVE manual | `69e0e848aaba88219706dc21` |
-| Porras de todos los usuarios | `69e107f9aaba882197079212` |
+| Nodo | URL | Contenido |
+|---|---|---|
+| `/results` | `…/results.json` | Resultados de partidos y marcas TVE manual |
+| `/porras` | `…/porras.json` | Porras de todos los usuarios |
 
-La API key está configurada directamente en el código de cada fichero HTML.
+**URL base:** `https://mundial2026-53420-default-rtdb.europe-west1.firebasedatabase.app`
+
+La URL está configurada directamente en el código de cada fichero HTML como `FIREBASE_URL`. No requiere API key: el acceso se controla mediante las reglas de seguridad de Firebase.
 
 ---
 
@@ -238,7 +240,7 @@ Ambas páginas incluyen un banner configurable que aparece entre el header y las
 
 ### Configuración manual
 
-Edita el objeto `BANNER_CONFIG` en cada fichero HTML (sección `// ── BANNER CONFIG`, justo debajo de `// ── JSONBIN CONFIG`):
+Edita el objeto `BANNER_CONFIG` en cada fichero HTML (sección `// ── BANNER CONFIG`, justo debajo de `// ── FIREBASE CONFIG`):
 
 ```javascript
 const BANNER_CONFIG = {
@@ -266,7 +268,7 @@ const BANNER_CONFIG = {
 
 ### Comportamiento automático
 
-Si `loadResults()` / `loadAll()` falla al conectar con JSONBin y **no hay banner manual configurado** (`visible: false` o `message` vacío), el banner de error aparece automáticamente con el mensaje "Sin conexión con el servidor de datos…".
+Si `loadResults()` / `loadAll()` falla al conectar con Firebase y **no hay banner manual configurado** (`visible: false` o `message` vacío), el banner de error aparece automáticamente con el mensaje "Sin conexión con el servidor de datos…".
 
 Si ya hay un banner manual activo, este tiene prioridad y el automático no lo sobrescribe.
 
@@ -276,7 +278,7 @@ Cuando la conexión se recupera (al pulsar **↺ Actualizar**), el estado vuelve
 
 ## 📊 Estructura de datos
 
-### Resultados (`index.html`)
+### Resultados — nodo `/results`
 
 ```json
 {
@@ -286,7 +288,7 @@ Cuando la conexión se recupera (al pulsar **↺ Actualizar**), el estado vuelve
 }
 ```
 
-### Porras (`porra2026.html`)
+### Porras — nodo `/porras`
 
 ```json
 {

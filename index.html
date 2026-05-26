@@ -695,20 +695,17 @@ let favoriteMatches = {};
 let tveMatches = {};
 let showTveOnly = false;
 
-// ── JSONBIN CONFIG ────────────────────────────────────
-const BIN_ID  = '69e0e848aaba88219706dc21';
-const BIN_KEY = '$2a$10$qpwc.nvxlI/yoE7UUhUBtel9PTaTv35xxveuxuHoiFe/eK7GJjpsG';
-const BIN_URL = `https://api.jsonbin.io/v3/b/${BIN_ID}`;
-const HEADERS = { 'Content-Type':'application/json', 'X-Access-Key': BIN_KEY };
+// ── FIREBASE CONFIG ───────────────────────────────────
+const FIREBASE_URL = 'https://mundial2026-53420-default-rtdb.europe-west1.firebasedatabase.app';
 
 // ── BANNER CONFIG ─────────────────────────────────────
 // visible: true/false  |  type: 'info' | 'warning' | 'error' | 'success'
 const BANNER_CONFIG = {
-  visible: true,
-  type: 'error',
-  message: 'Problemas de conexión con la base de datos. Es posible que los resultados no estén actualizados.',
-  dismissible: false,
-  ticker: true,   // true = texto en movimiento estilo rótulo
+  visible: false,
+  type: 'info',
+  message: '',
+  dismissible: true,
+  ticker: false,
 };
 function showBanner(type, message, dismissible=true, ticker=false) {
   const el = document.getElementById('appBanner');
@@ -739,10 +736,10 @@ function setSyncStatus(state, msg='') {
 async function loadResults() {
   setSyncStatus('loading');
   try {
-    const res = await fetch(BIN_URL + '/latest', { headers: { 'X-Access-Key': BIN_KEY } });
+    const res = await fetch(FIREBASE_URL + '/results.json');
     if (!res.ok) throw new Error(res.status);
     const data = await res.json();
-    results = data.record || {};
+    results = data || {};
     favoriteMatches = results.favoriteMatches || JSON.parse(localStorage.getItem('mundial2026_favorites') || '{}');
     tveMatches = results.tveMatches || JSON.parse(localStorage.getItem('mundial2026_tve') || '{}');
     isAdmin = localStorage.getItem('admin_logged_in') === 'true';
@@ -750,7 +747,7 @@ async function loadResults() {
     if (BANNER_CONFIG.visible && BANNER_CONFIG.message) showBanner(BANNER_CONFIG.type, BANNER_CONFIG.message, BANNER_CONFIG.dismissible, BANNER_CONFIG.ticker);
     else hideBanner();
   } catch(e) {
-    console.error('JSONBin load error:', e);
+    console.error('Firebase load error:', e);
     setSyncStatus('error', 'Error al cargar — revisa tu conexión');
     results = {};
     favoriteMatches = JSON.parse(localStorage.getItem('mundial2026_favorites') || '{}');
@@ -765,15 +762,15 @@ async function saveResults() {
   isSyncing = true;
   setSyncStatus('saving');
   try {
-    const res = await fetch(BIN_URL, {
+    const res = await fetch(FIREBASE_URL + '/results.json', {
       method: 'PUT',
-      headers: HEADERS,
+      headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ ...results, favoriteMatches, tveMatches })
     });
     if (!res.ok) throw new Error(res.status);
     setSyncStatus('ok');
   } catch(e) {
-    console.error('JSONBin save error:', e);
+    console.error('Firebase save error:', e);
     setSyncStatus('error', 'Error al guardar');
   } finally {
     isSyncing = false;
@@ -1503,7 +1500,7 @@ const SEED_RESULTS = {"1":{"home":2,"away":0},"2":{"home":1,"away":1},"3":{"home
   updateStats();
   initBanner();
 
-  // Cargar datos desde JSONBin
+  // Cargar datos desde Firebase
   await loadResults();
 
   if (isAdmin) {
