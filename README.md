@@ -238,13 +238,22 @@ La URL y la configuración del SDK están en el código de cada fichero HTML. La
 ```json
 {
   "rules": {
-    ".read": true,
-    ".write": "auth != null"
+    "results": {
+      ".read": true,
+      ".write": "auth != null"
+    },
+    "porras": {
+      ".read": true,
+      ".write": true
+    }
   }
 }
 ```
 
-Lectura pública para todos los usuarios; escritura solo para el admin autenticado con Firebase Authentication (Email/Password). El admin se gestiona desde Firebase Console → Authentication → Users, sin contraseñas hardcodeadas en el código.
+- `/results` — lectura pública; escritura solo para el admin autenticado (Firebase Auth)
+- `/porras` — lectura y escritura públicas (los usuarios guardan su porra sin login)
+
+El admin se gestiona desde Firebase Console → Authentication → Users, sin contraseñas hardcodeadas en el código.
 
 ---
 
