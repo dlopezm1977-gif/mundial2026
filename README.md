@@ -142,7 +142,9 @@ Se predice cuántos equipos de cada continente llegan a cada ronda eliminatoria.
 
 ## 🔐 Sistema de admin
 
-Contraseña: `admin2026` — compartida entre las dos páginas; la sesión se persiste en `localStorage`.
+El admin se autentica mediante **Firebase Authentication (Email/Password)**. No hay contraseñas hardcodeadas en el código: el usuario admin se crea y gestiona desde **Firebase Console → Authentication → Users**.
+
+Para acceder: pulsa el botón 🔐 Admin en el header → se abre un modal con email y contraseña → Firebase valida las credenciales y devuelve un token de sesión. La sesión se mantiene automáticamente entre recargas (Firebase SDK gestiona el token internamente).
 
 ### `index.html`
 
@@ -210,6 +212,7 @@ python -m http.server 8080
 | Frontend | HTML5 + CSS3 + JavaScript ES6+ (sin frameworks) |
 | Gráficas | Chart.js 4.4 (CDN) |
 | Almacenamiento compartido | Firebase Realtime Database (REST API) |
+| Autenticación | Firebase Authentication (Email/Password) |
 | Persistencia local | localStorage (fallback offline) |
 | PWA | Web App Manifest + Service Worker (caché offline) |
 | Banderas | FlagCDN |
