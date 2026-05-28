@@ -63,6 +63,7 @@ Permite a cada participante crear su propia porra y competir en un leaderboard c
 
 - **Grupos de participantes**: cada usuario puede asignarse a un grupo (trabajo, familia, amigos…) al registrarse o en cualquier momento; el admin también puede asignar grupos desde el panel de administración
 - **Bloqueo automático**: la porra se bloquea al enviar; se puede desbloquear y editar hasta el **10 de junio de 2026 a las 23:59 (hora España)**; después queda bloqueada definitivamente
+- **Confirmación de envío**: al enviar (nueva porra o actualización), el formulario se cierra y aparece un mensaje de éxito con el nombre del participante; el campo de nombre queda libre para que otra persona pueda registrar su porra a continuación
 - **Sincronización multiusuario**: varios participantes pueden rellenar su porra a la vez sin conflictos
 - **Diseño responsive**: optimizado para móvil, incluyendo el formulario de nombre, la clasificación y el simulador
 - Botón 📲 Instalar en el header con instrucciones paso a paso para instalar la app en Android e iOS

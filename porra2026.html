@@ -1381,9 +1381,14 @@ async function submitPorra() {
   if (!confirm(`¿Confirmas el envío de tu porra? Podrás editarla hasta el 10 de junio de 2026.`)) return;
 
   entry.locked = true;
+  const name = entry.displayName || currentPlayer;
   await savePorras();
-  refreshFormState();
-  document.getElementById('porraStatus').textContent = `✅ Porra de ${entry.displayName || currentPlayer} enviada correctamente.`;
+  logout();
+  document.getElementById('porraStatus').innerHTML = `
+    <div style="margin-top:.75rem;padding:.9rem 1.1rem;border-radius:8px;background:rgba(34,197,94,.08);border:1px solid rgba(34,197,94,.25);color:#86efac;line-height:1.6">
+      <div style="font-size:.95rem;font-weight:600;margin-bottom:.25rem">✅ ¡Porra enviada correctamente!</div>
+      <div style="font-size:.75rem;opacity:.85">Porra de <strong>${name}</strong> guardada en la nube. Puedes editarla hasta el 10 de junio de 2026 volviendo a introducir tu nombre.</div>
+    </div>`;
 }
 
 async function unlockPorra() {
