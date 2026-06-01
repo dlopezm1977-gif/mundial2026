@@ -585,7 +585,7 @@
           <p style="font-size:.78rem;color:var(--muted);margin-bottom:1rem;line-height:1.5">
             Calcula los cruces a partir de tus resultados de grupos, elige el ganador de cada partido ronda a ronda y rellena automáticamente el Big 4 y los equipos por continente.
           </p>
-          <button class="btn" style="border-color:var(--accent);color:var(--accent)" onclick="simOpen()">🔮 Simular eliminatorias</button>
+          <button id="simBtn" class="btn" style="border-color:var(--accent);color:var(--accent)" onclick="simOpen()">🔮 Simular eliminatorias</button>
         </div>
       </div>
 
@@ -1331,6 +1331,9 @@ function refreshFormState() {
     groupInput.onchange = savePlayerGroup;
     groupInput.oninput  = null; // solo guarda al salir del campo
   }
+
+  const simBtn = document.getElementById('simBtn');
+  if (simBtn) simBtn.style.display = locked ? 'none' : '';
 
   renderMatchRows();
   buildContinentGrid(locked);
