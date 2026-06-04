@@ -1720,7 +1720,10 @@ function scorePlayer(entry) {
     const picked = entry.big4?.[team];
     if (!picked) return;
     const actual = getTeamRound(team);
-    if (picked === actual) pts += 100;
+    const roundKnown = actual !== 'Fase de Grupos' || GROUP_MATCHES.filter(m => m.home === team || m.away === team).every(m => {
+      const r = masterData[m.id]; return r && r.home !== undefined && r.home !== '';
+    });
+    if (roundKnown && picked === actual) pts += 100;
   });
 
   // Continent predictions: 50 pts per correct (continent, round) combination
