@@ -182,7 +182,11 @@
   .leaderboard{display:flex;flex-direction:column;gap:.5rem;}
   .lb-row{background:var(--surface);border:1px solid var(--border);border-radius:8px;
     display:grid;grid-template-columns:44px 1fr repeat(4,70px);align-items:center;
-    padding:.7rem 1rem;gap:.5rem;transition:border-color .15s;}
+    padding:.7rem 1rem;gap:.5rem;transition:border-color .15s;
+    position:relative;overflow:hidden;}
+  .lb-row::before{content:'';position:absolute;left:0;top:0;bottom:0;width:3px;
+    background:rgba(239,68,68,.6);border-radius:8px 0 0 8px;}
+  .lb-row.locked::before{background:rgba(34,197,94,.6);}
   .lb-row:hover{border-color:var(--border);}
   .lb-row.gold{border-color:rgba(232,200,74,.4);background:rgba(232,200,74,.05);}
   .lb-row.silver{border-color:rgba(148,163,184,.3);}
@@ -1788,10 +1792,10 @@ function renderLeaderboard() {
       ? p.groups.map(g => `<span class="lb-group-tag">${g}</span>`).join('') : '';
 
     html += `
-      <div class="lb-row ${medal}" onclick="showDetail('${p.key.replace(/'/g,"\\'")}')">
+      <div class="lb-row ${medal}${p.locked?' locked':''}" onclick="showDetail('${p.key.replace(/'/g,"\\'")}')">
         <div class="lb-pos ${posClass}">${i+1}</div>
         <div>
-          <div class="lb-name">${p.name}${groupTag} ${p.locked?'🔒':''}</div>
+          <div class="lb-name">${p.name}${groupTag}</div>
           <div class="lb-sub">click para ver detalle</div>
         </div>
         <div class="lb-col"><div class="val">${p.exact}</div><div class="lbl">exactos</div></div>

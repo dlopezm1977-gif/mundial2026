@@ -73,7 +73,7 @@ Permite a cada participante crear su propia porra y competir en un leaderboard c
 
 - **Banner "Rey del día"**: siempre visible en la cabecera, muestra quién sumó más puntos en la última jornada con resultados (respeta el filtro de grupo activo)
 - **Filtro de grupo**: botones 🌐 Global + uno por cada grupo creado; al activar un grupo, el ranking, el histórico de jornadas y la gráfica de evolución se filtran a ese grupo
-- **Sub-pestaña General**: ranking completo con posición, nombre (etiqueta de grupo visible en vista Global), exactos, especiales y total; medallas 🥇🥈🥉 para el top 3
+- **Sub-pestaña General**: ranking completo con posición, nombre (etiqueta de grupo visible en vista Global), exactos, especiales y total; medallas 🥇🥈🥉 para el top 3; franja de color en el borde izquierdo de cada fila: verde = porra bloqueada (enviada), rojo = porra sin bloquear (pendiente de enviar)
 - **Sub-pestaña Por jornada**: tabla histórica con el top 3 de cada día jugado
 - **Sub-pestaña Evolución**: gráfica de líneas (Chart.js) con la evolución de puntos acumulados por jugador a lo largo del torneo; leyenda interactiva para ocultar/mostrar participantes
 - **Detalle de porra**: clic en cualquier participante abre un modal con los 72 partidos y los pronósticos especiales comparados con el resultado real
