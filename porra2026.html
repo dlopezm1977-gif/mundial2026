@@ -511,7 +511,7 @@
 
       <div class="rules-section">
         <h4>👥 Grupos</h4>
-        <p class="rules-note">Al identificarte puedes escribir el nombre del grupo al que perteneces (trabajo, familia, amigos…). Elige uno existente de la lista o escribe uno nuevo. Una vez asignado, en la pestaña Clasificación aparecerán botones para ver el ranking, el histórico de jornadas y la gráfica de evolución filtrados solo por tu grupo, además de la vista Global con todos los participantes.</p>
+        <p class="rules-note">Puedes pertenecer a varios grupos a la vez (trabajo, familia, amigos…). Una vez asignado, en la pestaña Clasificación aparecerán botones para ver el ranking, el histórico de jornadas y la gráfica de evolución filtrados por cada grupo, además de la vista Global con todos los participantes.</p>
       </div>
 
       <div class="rules-section">
@@ -1326,10 +1326,10 @@ function refreshFormState() {
   const groupInput = document.getElementById('playerGroup');
   if (groupRow && groupInput) {
     groupRow.style.display = '';
-    groupInput.value = entry.group || '';
+    groupInput.value = '';
     populateGroupDatalist();
     groupInput.onchange = savePlayerGroup;
-    groupInput.oninput  = null; // solo guarda al salir del campo
+    groupInput.oninput  = null;
   }
 
   const simBtn = document.getElementById('simBtn');
@@ -1749,7 +1749,7 @@ function renderLeaderboard() {
     .map(([key, entry]) => {
       const { pts, exact, partial } = scorePlayer(entry);
       return { key, name: entry.displayName || key, pts, exact, partial,
-               locked: entry.locked, group: entry.group || '' };
+               locked: entry.locked, groups: entry.groups || [] };
     })
     .sort((a,b) => b.pts - a.pts);
 
@@ -1784,8 +1784,8 @@ function renderLeaderboard() {
     const medal = i===0?'gold':i===1?'silver':i===2?'bronze':'';
     const posClass = i===0?'p1':i===1?'p2':i===2?'p3':'';
     const specPts = p.pts - p.exact*25 - p.partial*10;
-    const groupTag = (!activeLeaderboardGroup && p.group)
-      ? `<span class="lb-group-tag">${p.group}</span>` : '';
+    const groupTag = (!activeLeaderboardGroup && p.groups.length)
+      ? p.groups.map(g => `<span class="lb-group-tag">${g}</span>`).join('') : '';
 
     html += `
       <div class="lb-row ${medal}" onclick="showDetail('${p.key.replace(/'/g,"\\'")}')">
@@ -2193,15 +2193,24 @@ function closeGroupAdmin() {
 function populateGroupDatalist() {
   const dl = document.getElementById('playerGroupList');
   if (!dl) return;
-  dl.innerHTML = getGroupNames().map(g => `<option value="${g.replace(/"/g,'&quot;')}">`).join('');
+  const current = (currentPlayer && porrasData[currentPlayer]?.groups) || [];
+  dl.innerHTML = getGroupNames()
+    .filter(g => !current.includes(g))
+    .map(g => `<option value="${g.replace(/"/g,'&quot;')}">`).join('');
 }
 
 async function savePlayerGroup() {
   if (!currentPlayer || !porrasData[currentPlayer]) return;
   const val = document.getElementById('playerGroup').value.trim();
-  porrasData[currentPlayer].group = val;
-  populateGroupDatalist();
-  await savePorras();
+  document.getElementById('playerGroup').value = '';
+  if (!val) return;
+  const entry = porrasData[currentPlayer];
+  if (!Array.isArray(entry.groups)) entry.groups = [];
+  if (!entry.groups.includes(val)) {
+    entry.groups.push(val);
+    populateGroupDatalist();
+    await savePorras();
+  }
 }
 
 function _renderGroupAdminBody() {
@@ -2211,15 +2220,25 @@ function _renderGroupAdminBody() {
   const groups = getGroupNames();
 
   let html = `<table class="ga-table">
-    <thead><tr><th>Participante</th><th>Grupo</th></tr></thead>
+    <thead><tr><th>Participante</th><th>Grupos</th></tr></thead>
     <tbody>`;
   players.forEach(([key, entry]) => {
-    const safeKey = key.replace(/"/g,'&quot;');
-    const safeVal = (entry.group||'').replace(/"/g,'&quot;');
+    const safeKey = key.replace(/'/g,"\\'").replace(/"/g,'&quot;');
+    const gs = entry.groups || [];
+    const chips = gs.map((g, i) =>
+      `<span class="lb-group-tag" style="cursor:pointer" title="Quitar grupo" onclick="removeAdminGroup('${safeKey}',${i})">${g} ✕</span>`
+    ).join('');
     html += `<tr>
       <td>${entry.displayName || key}</td>
-      <td><input class="ga-input" type="text" data-key="${safeKey}" value="${safeVal}"
-        placeholder="sin grupo" list="ga-datalist"></td>
+      <td>
+        <div style="display:flex;flex-wrap:wrap;gap:.3rem;align-items:center">
+          ${chips}
+          <input class="ga-input" type="text" data-key="${safeKey}"
+            style="width:130px" placeholder="añadir grupo…" list="ga-datalist"
+            onkeydown="if(event.key==='Enter'){event.preventDefault();addAdminGroup('${safeKey}',this)}"
+            onchange="addAdminGroup('${safeKey}',this)">
+        </div>
+      </td>
     </tr>`;
   });
   html += `</tbody></table>
@@ -2229,17 +2248,33 @@ function _renderGroupAdminBody() {
   document.getElementById('groupAdminBody').innerHTML = html;
 }
 
-async function saveGroupAdmin() {
-  document.querySelectorAll('.ga-input').forEach(inp => {
-    const key = inp.getAttribute('data-key');
-    if (porrasData[key]) porrasData[key].group = inp.value.trim();
-  });
+async function addAdminGroup(key, input) {
+  const val = input.value.trim();
+  input.value = '';
+  if (!val || !porrasData[key]) return;
+  if (!Array.isArray(porrasData[key].groups)) porrasData[key].groups = [];
+  if (porrasData[key].groups.includes(val)) return;
+  porrasData[key].groups.push(val);
   await savePorras();
-  closeGroupAdmin();
+  _renderGroupAdminBody();
   populateGroupDatalist();
   renderGroupFilter();
-  renderDailyBanner();
   renderLeaderboard();
+}
+
+async function removeAdminGroup(key, index) {
+  if (!porrasData[key] || !Array.isArray(porrasData[key].groups)) return;
+  porrasData[key].groups.splice(index, 1);
+  await savePorras();
+  _renderGroupAdminBody();
+  populateGroupDatalist();
+  renderGroupFilter();
+  renderLeaderboard();
+}
+
+async function saveGroupAdmin() {
+  closeGroupAdmin();
+  renderDailyBanner();
   if (activeSubTab === 'jornadas') renderDailySection();
   if (activeSubTab === 'evolucion') renderEvolutionChart();
 }
@@ -2299,14 +2334,14 @@ function getGroupNames() {
   const groups = new Set();
   Object.entries(porrasData)
     .filter(([k]) => k !== '_seeded')
-    .forEach(([, entry]) => { if (entry.group) groups.add(entry.group); });
+    .forEach(([, entry]) => (entry.groups || []).forEach(g => groups.add(g)));
   return [...groups].sort();
 }
 
 function getPlayersFiltered() {
   return Object.entries(porrasData)
     .filter(([k]) => k !== '_seeded')
-    .filter(([, entry]) => !activeLeaderboardGroup || entry.group === activeLeaderboardGroup);
+    .filter(([, entry]) => !activeLeaderboardGroup || (entry.groups || []).includes(activeLeaderboardGroup));
 }
 
 function switchSubTab(tab) {

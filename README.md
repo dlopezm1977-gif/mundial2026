@@ -61,7 +61,7 @@ Permite a cada participante crear su propia porra y competir en un leaderboard c
 
 **Otras funcionalidades:**
 
-- **Grupos de participantes**: cada usuario puede asignarse a un grupo (trabajo, familia, amigos…) al registrarse o en cualquier momento; el admin también puede asignar grupos desde el panel de administración
+- **Grupos de participantes**: cada participante puede pertenecer a **varios grupos a la vez** (trabajo, familia, amigos…); el admin gestiona los grupos desde el panel de administración (añadir/quitar con chips); el propio usuario también puede añadirse a un grupo desde su formulario
 - **Bloqueo automático**: la porra se bloquea al enviar; se puede desbloquear y editar hasta el **10 de junio de 2026 a las 23:59 (hora España)**; después queda bloqueada definitivamente
 - **Confirmación de envío**: al enviar (nueva porra o actualización), el formulario se cierra y aparece un mensaje de éxito con el nombre del participante; el campo de nombre queda libre para que otra persona pueda registrar su porra a continuación
 - **Sincronización multiusuario**: varios participantes pueden rellenar su porra a la vez sin conflictos
@@ -158,7 +158,7 @@ Con sesión de admin activa se habilitan:
 ### `porra2026.html`
 
 Con sesión de admin activa se habilita:
-- **Gestionar grupos**: asignar o cambiar el grupo de cualquier participante desde un panel con autocompletado
+- **Gestionar grupos**: asignar múltiples grupos a cada participante desde un panel con chips por grupo (✕ para quitar) e input con autocompletado para añadir nuevos; cada acción se guarda en Firebase al instante
 
 Los usuarios sin login pueden ver resultados, clasificaciones, estadísticas y todos los filtros, pero no modificar nada.
 
@@ -322,7 +322,7 @@ Cuando la conexión se recupera (al pulsar **↺ Actualizar**), el estado vuelve
       "1": { "h": 2, "a": 0 },
       "2": { "h": 1, "a": 1 }
     },
-    "group": "Trabajo",
+    "groups": ["Trabajo", "Amigos"],
     "champion": "Brasil",
     "runnerup": "Argentina",
     "big4": {
