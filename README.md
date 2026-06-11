@@ -27,7 +27,7 @@ Organizada en cuatro pestañas:
 - Logos de canal: DAZN siempre visible; TVE se activa automáticamente en el partido inaugural, todos los de España, y semis/final/tercer puesto (el admin puede marcarlo manualmente en cualquier otro)
 - Estadísticas: partidos jugados, goles totales, media por partido y barra de progreso; antes del inicio muestra cuenta atrás en directo hasta el partido inaugural
 - Filtros por grupo, por fase (grupos / KO), por fecha o solo partidos en TVE
-- **Indicador de pronósticos**: cada tarjeta de partido incluye una barra de color en la parte inferior con el porcentaje de participantes de la porra que pronosticaron victoria local / empate / victoria visitante; antes del partido los colores son azul / gris / naranja; una vez jugado, el segmento acertado se pone en verde y los erróneos en rojo
+- **Indicador de pronósticos**: cada tarjeta de partido incluye una barra de color en la parte inferior con el porcentaje de participantes de la porra que pronosticaron victoria local / empate / victoria visitante; antes del partido los colores son azul / gris / naranja; una vez jugado, el segmento acertado se pone en verde y los erróneos en rojo. Los picks se leen directamente del nodo `/porras` de Firebase (solo porras con `locked: true`); los picks se almacenan internamente como array indexado por ID de partido
 
 **Clasificación**
 - Tabla por grupo calculada automáticamente con criterios de desempate (puntos, diferencia de goles, goles a favor)
@@ -358,7 +358,7 @@ Cuando la conexión se recupera (al pulsar **↺ Actualizar**), el estado vuelve
 | `index.html` | Seguimiento de partidos, clasificaciones de grupo y cuadro de eliminatorias |
 | `porra2026.html` | Sistema de predicciones y leaderboard |
 | `manifest.json` | Manifiesto PWA (nombre, icono, colores, modo standalone) |
-| `sw.js` | Service worker — caché offline de los ficheros principales |
+| `sw.js` | Service worker — caché offline de los ficheros principales (`v5`); solo cachea ficheros que existen: `index.html`, `porra2026.html`, `manifest.json`, `icons/icon-192.png`, `assets/img/DAZN.png`, `assets/img/TVE.png` |
 | `icons/icon-192.png` | Icono de la app (192×192 px) para launcher y apple-touch-icon |
 | `assets/img/DAZN.png` | Logo DAZN (usado en los match cards) |
 | `assets/img/TVE.png` | Logo TVE (usado en los match cards) |
