@@ -50,7 +50,13 @@
   .section{display:none;}
   .section.active{display:block;}
   /* STATS */
-  .stats-bar{display:flex;gap:1rem;margin-bottom:1.5rem;flex-wrap:wrap;}
+  .stats-toggle{display:flex;align-items:center;gap:.5rem;cursor:pointer;margin-bottom:.6rem;color:var(--muted);font-size:.6rem;font-family:'DM Mono',monospace;text-transform:uppercase;letter-spacing:.1em;user-select:none;width:fit-content;}
+  .stats-toggle:hover{color:var(--text);}
+  .stats-toggle .toggle-arrow{font-size:.65rem;transition:transform .2s;}
+  .stats-bar{display:flex;gap:1rem;margin-bottom:1.5rem;flex-wrap:wrap;overflow:hidden;transition:max-height .25s ease, opacity .2s ease, margin .2s ease;}
+  .stats-bar.collapsed{max-height:0;opacity:0;margin-bottom:0;pointer-events:none;}
+  #filtersWrap{overflow:hidden;transition:max-height .25s ease, opacity .2s ease, margin .2s ease;}
+  #filtersWrap.collapsed{max-height:0;opacity:0;pointer-events:none;}
   .stat-card{background:var(--surface);border:1px solid var(--border);border-radius:6px;padding:.8rem 1.2rem;flex:1;min-width:110px;}
   .stat-card .val{font-family:'Bebas Neue',sans-serif;font-size:1.9rem;color:var(--accent);line-height:1;}
   .stat-card .lbl{font-size:.6rem;color:var(--muted);text-transform:uppercase;letter-spacing:.1em;margin-top:.2rem;}
@@ -398,9 +404,13 @@ function switchInstall(id,btn){
 
 <div class="container">
   <div class="section active" id="sec-partidos">
+    <div class="stats-toggle" id="statsToggle" onclick="toggleStats()"></div>
     <div class="stats-bar" id="statsBar"></div>
-    <div class="filter-bar" id="filterBar"></div>
-    <div class="date-filter-bar" id="dateFilterBar"></div>
+    <div class="stats-toggle" id="filtersToggle" onclick="toggleFilters()"></div>
+    <div id="filtersWrap">
+      <div class="filter-bar" id="filterBar"></div>
+      <div class="date-filter-bar" id="dateFilterBar"></div>
+    </div>
     <div class="matches-list" id="matchesList"></div>
   </div>
   <div class="section" id="sec-clasificacion">
@@ -715,6 +725,8 @@ let results = {};
 let countdownInterval = null;
 let activeFilter = 'ALL';
 let activeDateFilter = null;
+let statsExpanded = localStorage.getItem('statsExpanded') === 'true';
+let filtersExpanded = localStorage.getItem('filtersExpanded') === 'true';
 let porraStats = {};
 let datesExpanded = false;
 let currentEditId = null;
@@ -1244,6 +1256,30 @@ function renderAll(){
 }
 
 // ── STATS ─────────────────────────────────────────────
+function toggleStats(){
+  statsExpanded = !statsExpanded;
+  localStorage.setItem('statsExpanded', statsExpanded);
+  applyStatsState();
+}
+function toggleFilters(){
+  filtersExpanded = !filtersExpanded;
+  localStorage.setItem('filtersExpanded', filtersExpanded);
+  applyFiltersState();
+}
+function applyStatsState(){
+  const bar = document.getElementById('statsBar');
+  const btn = document.getElementById('statsToggle');
+  if(!bar || !btn) return;
+  bar.classList.toggle('collapsed', !statsExpanded);
+  btn.innerHTML = `<span class="toggle-arrow">${statsExpanded ? '▲' : '▼'}</span> Estadísticas`;
+}
+function applyFiltersState(){
+  const wrap = document.getElementById('filtersWrap');
+  const btn = document.getElementById('filtersToggle');
+  if(!wrap || !btn) return;
+  wrap.classList.toggle('collapsed', !filtersExpanded);
+  btn.innerHTML = `<span class="toggle-arrow">${filtersExpanded ? '▲' : '▼'}</span> Filtros`;
+}
 function updateStats(){
   const total=ALL_MATCHES.length;
   const played=ALL_MATCHES.filter(m=>isPlayed(m.id)).length;
@@ -1285,6 +1321,7 @@ function updateStats(){
     <div class="stat-card"><div class="val">${goals}</div><div class="lbl">Goles totales</div></div>
     <div class="stat-card"><div class="val">${avg}</div><div class="lbl">Media goles/ptdo</div></div>
     ${lastCard}`;
+  applyStatsState();
 }
 
 // ── FILTER BAR ────────────────────────────────────────
@@ -1298,6 +1335,7 @@ function buildFilterBar(){
   html+=`<button class="filter-btn${showTveOnly?' active':''}" onclick="toggleTveFilter()">📺 TVE</button>`;
   document.getElementById('filterBar').innerHTML=html;
   buildDateFilterBar();
+  applyFiltersState();
 }
 function setFilter(f){activeFilter=f;buildFilterBar();renderMatches();}
 
