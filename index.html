@@ -790,6 +790,7 @@ function computePorraStats(data) {
   Object.values(data).forEach(player => {
     if (!player.locked || !player.picks) return;
     Object.entries(player.picks).forEach(([id, pick]) => {
+      if (!pick) return;
       const h = pick.h, a = pick.a;
       if (h === undefined || h === '' || a === undefined || a === '') return;
       if (!stats[id]) stats[id] = { h: 0, d: 0, a: 0, n: 0 };
@@ -812,11 +813,13 @@ function computePorraStats(data) {
 async function loadPorraStats() {
   try {
     const res = await fetch(FIREBASE_URL + '/porras.json');
-    if (!res.ok) return;
+    if (!res.ok) { console.warn('loadPorraStats: HTTP', res.status); return; }
     const data = await res.json();
     porraStats = computePorraStats(data);
+    const total = Object.keys(porraStats).length;
+    console.log('porraStats cargado:', total, 'partidos con pronósticos');
     renderMatches();
-  } catch(e) {}
+  } catch(e) { console.error('loadPorraStats error:', e); }
 }
 
 async function loadResults() {
