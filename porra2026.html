@@ -457,14 +457,14 @@
 </div>
 
 <div class="tabs">
-  <button class="tab active" onclick="switchTab('mi-porra')">Mi Porra</button>
-  <button class="tab" onclick="switchTab('clasificacion')">Clasificación</button>
+  <button class="tab active" onclick="switchTab('clasificacion')">Clasificación</button>
+  <button class="tab" onclick="switchTab('mi-porra')">Mi Porra</button>
 </div>
 
 <div class="container">
 
   <!-- ══ MI PORRA ══ -->
-  <div class="section active" id="sec-mi-porra">
+  <div class="section" id="sec-mi-porra">
 
     <!-- Leyenda de puntuación -->
     <div class="scoring-legend">
@@ -683,7 +683,7 @@
   </div>
 
   <!-- ══ CLASIFICACIÓN ══ -->
-  <div class="section" id="sec-clasificacion">
+  <div class="section active" id="sec-clasificacion">
     <div id="dailyBannerContainer"></div>
     <div id="groupFilterContainer"></div>
     <div class="sub-tabs">
@@ -1228,7 +1228,13 @@ async function loadOrStartPorra() {
     return;
   }
 
-  // Nuevo participante
+  // Nuevo participante — bloqueado si el plazo ha finalizado
+  if (!isEditable()) {
+    currentPlayer = null;
+    alert('El plazo para enviar la porra ha finalizado. Solo puedes consultar porras ya enviadas.');
+    return;
+  }
+
   porrasData[currentPlayer] = {
     displayName,
     picks: {}, champion: '', runnerup: '',
@@ -2361,7 +2367,7 @@ function switchSubTab(tab) {
 
 function switchTab(tab) {
   document.querySelectorAll('.tab').forEach((t,i) => {
-    t.classList.toggle('active', ['mi-porra','clasificacion'][i] === tab);
+    t.classList.toggle('active', ['clasificacion','mi-porra'][i] === tab);
   });
   document.querySelectorAll('.section').forEach(s => s.classList.remove('active'));
   document.getElementById('sec-'+tab).classList.add('active');
@@ -2740,6 +2746,9 @@ function simApply() {
   initBanner();
   await authReady;
   await loadAll();
+  renderGroupFilter();
+  renderDailyBanner();
+  renderLeaderboard();
 })();
 </script>
 <footer style="text-align:center;padding:2rem 1rem 1.5rem;font-size:.7rem;color:var(--muted);letter-spacing:.1em;">

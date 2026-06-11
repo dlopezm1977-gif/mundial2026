@@ -89,6 +89,13 @@
   .match-card.knockout{background:rgba(59,130,246,.03);}
   .match-card.knockout.pending{border-left:3px solid rgba(59,130,246,.28);}
   .match-card.final-match{background:rgba(232,200,74,.04);border-color:rgba(232,200,74,.2);}
+  .picks-bar{grid-column:1/-1;display:flex;height:16px;border-top:1px solid var(--border);}
+  .picks-seg{display:flex;align-items:center;justify-content:center;font-size:.52rem;font-family:'DM Mono',monospace;color:rgba(255,255,255,.85);overflow:hidden;white-space:nowrap;min-width:0;transition:width .4s ease;}
+  .picks-seg.ph{background:rgba(59,130,246,.45);}
+  .picks-seg.pd{background:rgba(100,116,139,.35);}
+  .picks-seg.pa{background:rgba(239,100,68,.4);}
+  .picks-seg.correct{background:rgba(34,197,94,.5);}
+  .picks-seg.wrong{background:rgba(239,68,68,.3);}
   .match-time{padding:.6rem .65rem;font-family:'DM Mono',monospace;font-size:.92rem;font-weight:700;
     color:var(--accent);border-right:1px solid var(--border);text-align:center;line-height:1.2;}
   .match-time .time-label{font-size:.5rem;color:var(--muted);display:block;margin-top:.1rem;letter-spacing:.07em;font-weight:400;}
@@ -531,7 +538,7 @@ const GROUPS = {
 function argToSpain(t) {
   if (!t) return '—:——';
   const [h,m] = t.split(':').map(Number);
-  const nh = (h+6)%24, nd = (h+6)>=24 ? '+1 ' : '';
+  const nh = (h+6)%24, nd = nh < 8 ? '+1 ' : '';
   return nd + String(nh).padStart(2,'0') + ':' + String(m||0).padStart(2,'0');
 }
 
@@ -708,6 +715,7 @@ let results = {};
 let countdownInterval = null;
 let activeFilter = 'ALL';
 let activeDateFilter = null;
+let porraStats = {};
 let datesExpanded = false;
 let currentEditId = null;
 let isSyncing = false;
@@ -774,6 +782,41 @@ function setSyncStatus(state, msg='') {
   const colors = { ok:'var(--green)', saving:'var(--accent)', error:'var(--red)', loading:'var(--accent2)' };
   el.textContent = (icons[state]||'') + ' ' + (msg || {ok:'Sincronizado',saving:'Guardando…',error:'Error de red',loading:'Cargando…'}[state]);
   el.style.color = colors[state] || 'var(--muted)';
+}
+
+function computePorraStats(data) {
+  const stats = {};
+  if (!data) return stats;
+  Object.values(data).forEach(player => {
+    if (!player.locked || !player.picks) return;
+    Object.entries(player.picks).forEach(([id, pick]) => {
+      const h = pick.h, a = pick.a;
+      if (h === undefined || h === '' || a === undefined || a === '') return;
+      if (!stats[id]) stats[id] = { h: 0, d: 0, a: 0, n: 0 };
+      stats[id].n++;
+      if (+h > +a) stats[id].h++;
+      else if (+h === +a) stats[id].d++;
+      else stats[id].a++;
+    });
+  });
+  Object.values(stats).forEach(s => {
+    if (s.n > 0) {
+      s.hp = Math.round(s.h / s.n * 100);
+      s.dp = Math.round(s.d / s.n * 100);
+      s.ap = 100 - s.hp - s.dp;
+    }
+  });
+  return stats;
+}
+
+async function loadPorraStats() {
+  try {
+    const res = await fetch(FIREBASE_URL + '/porras.json');
+    if (!res.ok) return;
+    const data = await res.json();
+    porraStats = computePorraStats(data);
+    renderMatches();
+  } catch(e) {}
 }
 
 async function loadResults() {
@@ -1067,6 +1110,21 @@ function renderMatches() {
       const hasPen = isKO && played && r && +r.home===+r.away && r.pen1!==undefined;
       const penStr = hasPen ? `<span class="pen-badge">Pen. ${r.pen1}:${r.pen2}</span>` : '';
 
+      const ps = porraStats[m.id];
+      let hCls = 'ph', dCls = 'pd', aCls = 'pa';
+      if (played && r) {
+        const actual = +r.home > +r.away ? 'h' : +r.home === +r.away ? 'd' : 'a';
+        hCls = actual === 'h' ? 'correct' : 'wrong';
+        dCls = actual === 'd' ? 'correct' : 'wrong';
+        aCls = actual === 'a' ? 'correct' : 'wrong';
+      }
+      const picksBar = ps && ps.n > 0
+        ? `<div class="picks-bar" title="${ps.n} pronósticos: ${ps.hp}% local · ${ps.dp}% empate · ${ps.ap}% visitante">
+            <div class="picks-seg ${hCls}" style="width:${ps.hp}%">${ps.hp >= 20 ? ps.hp+'%' : ''}</div>
+            <div class="picks-seg ${dCls}" style="width:${ps.dp}%">${ps.dp >= 20 ? ps.dp+'%' : ''}</div>
+            <div class="picks-seg ${aCls}" style="width:${ps.ap}%">${ps.ap >= 20 ? ps.ap+'%' : ''}</div>
+          </div>` : '';
+
       html+=`
         <div class="match-card ${played?'played':'pending'}${isKO?' knockout':''}${isFinal?' final-match':''}${isAdmin?' admin':''}" id="card-${m.id}">
           ${isAdmin ? `<div class="match-btns">
@@ -1090,6 +1148,7 @@ function renderMatches() {
               ${played?'✓':'+'}
             </button>
           </div>
+          ${picksBar}
         </div>`;
     });
   });
@@ -1245,8 +1304,23 @@ function formatDateShort(dateStr) {
   return `${parseInt(dd)} ${months[parseInt(mm)]}`;
 }
 
+// Devuelve la fecha "efectiva" en Madrid: si son menos de las 8h, devuelve el día anterior
+function getMadridEffectiveDate() {
+  const now = new Date();
+  const madridDateStr = new Intl.DateTimeFormat('sv', { timeZone: 'Europe/Madrid' }).format(now);
+  const madridHour = parseInt(new Intl.DateTimeFormat('en', {
+    timeZone: 'Europe/Madrid', hour: 'numeric', hour12: false
+  }).format(now));
+  if (madridHour < 8) {
+    const d = new Date(madridDateStr + 'T12:00:00Z');
+    d.setUTCDate(d.getUTCDate() - 1);
+    return d.toISOString().slice(0, 10);
+  }
+  return madridDateStr;
+}
+
 function buildDateFilterBar() {
-  const today = new Date().toISOString().slice(0,10);
+  const today = getMadridEffectiveDate();
   const dates = [...new Set(ALL_MATCHES.map(m => m.date))].sort();
   let html = '<span class="filter-label">Día:</span>';
   html += `<button class="filter-btn${!activeDateFilter?' active':''}" onclick="setDateFilter(null)">Todos</button>`;
@@ -1533,10 +1607,15 @@ const SEED_RESULTS = {"1":{"home":2,"away":0},"2":{"home":1,"away":1},"3":{"home
 
 // ── INIT ──────────────────────────────────────────────
 (async () => {
+  const effectiveToday = getMadridEffectiveDate();
+  if (ALL_MATCHES.some(m => m.date === effectiveToday)) {
+    activeDateFilter = effectiveToday;
+  }
   buildFilterBar();
   renderMatches();
   updateStats();
   initBanner();
+  loadPorraStats();
 
   await authReady;
 

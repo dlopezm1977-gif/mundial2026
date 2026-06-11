@@ -21,10 +21,13 @@ Organizada en cuatro pestañas:
 **Partidos**
 - Muestra los 104 partidos (72 de grupos + 32 de eliminatorias) ordenados por fase y fecha, con horarios en hora España
 - Dentro de cada día los partidos se ordenan por hora España de menor a mayor
+- Al entrar, el filtro de fecha se activa automáticamente en el día en curso (hora Madrid); el "día" empieza a las 8:00h, por lo que antes de esa hora se muestra el día anterior. Si no hay partidos ese día, muestra todos
+- Los horarios de madrugada (0–7h España) muestran "+1" indicando que el partido pertenece al día siguiente respecto a la fecha del calendario
 - El admin introduce los goles directamente; en partidos KO con empate se añade el resultado de penaltis
 - Logos de canal: DAZN siempre visible; TVE se activa automáticamente en el partido inaugural, todos los de España, y semis/final/tercer puesto (el admin puede marcarlo manualmente en cualquier otro)
 - Estadísticas: partidos jugados, goles totales, media por partido y barra de progreso; antes del inicio muestra cuenta atrás en directo hasta el partido inaugural
 - Filtros por grupo, por fase (grupos / KO), por fecha o solo partidos en TVE
+- **Indicador de pronósticos**: cada tarjeta de partido incluye una barra de color en la parte inferior con el porcentaje de participantes de la porra que pronosticaron victoria local / empate / victoria visitante; antes del partido los colores son azul / gris / naranja; una vez jugado, el segmento acertado se pone en verde y los erróneos en rojo
 
 **Clasificación**
 - Tabla por grupo calculada automáticamente con criterios de desempate (puntos, diferencia de goles, goles a favor)
@@ -63,11 +66,14 @@ Permite a cada participante crear su propia porra y competir en un leaderboard c
 
 - **Grupos de participantes**: cada participante puede pertenecer a **varios grupos a la vez** (trabajo, familia, amigos…); el admin gestiona los grupos desde el panel de administración (añadir/quitar con chips); el propio usuario también puede añadirse a un grupo desde su formulario
 - **Bloqueo automático**: la porra se bloquea al enviar; se puede desbloquear y editar hasta el **10 de junio de 2026 a las 23:59 (hora España)**; después queda bloqueada definitivamente
+- **Registro cerrado tras la fecha límite**: una vez superada la fecha límite no se pueden crear nuevos participantes; solo es posible consultar las porras ya enviadas
 - **Confirmación de envío**: al enviar (nueva porra o actualización), el formulario se cierra y aparece un mensaje de éxito con el nombre del participante; el campo de nombre queda libre para que otra persona pueda registrar su porra a continuación
 - **Sincronización multiusuario**: varios participantes pueden rellenar su porra a la vez sin conflictos
 - **Diseño responsive**: optimizado para móvil, incluyendo el formulario de nombre, la clasificación y el simulador
 - Botón 📲 Instalar en el header con instrucciones paso a paso para instalar la app en Android e iOS
 - Botón ⚽ Resultados en el header (morado) para navegar directamente a la página de seguimiento
+
+**Pestañas** (la clasificación es la primera y activa por defecto al entrar):
 
 **Pestaña Clasificación:**
 
