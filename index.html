@@ -101,7 +101,7 @@
   .picks-seg.pd{background:rgba(100,116,139,.35);}
   .picks-seg.pa{background:rgba(168,85,247,.45);}
   .picks-seg.correct{background:rgba(34,197,94,.5);}
-  .picks-seg.wrong{background:rgba(239,68,68,.3);}
+  .picks-seg.wrong{background:rgba(220,38,38,.65);}
   .match-time{padding:.6rem .65rem;font-family:'DM Mono',monospace;font-size:.92rem;font-weight:700;
     color:var(--accent);border-right:1px solid var(--border);text-align:center;line-height:1.2;}
   .match-time .time-label{font-size:.5rem;color:var(--muted);display:block;margin-top:.1rem;letter-spacing:.07em;font-weight:400;}
@@ -1126,19 +1126,38 @@ function renderMatches() {
       const penStr = hasPen ? `<span class="pen-badge">Pen. ${r.pen1}:${r.pen2}</span>` : '';
 
       const ps = porraStats[m.id];
-      let hCls = 'ph', dCls = 'pd', aCls = 'pa';
-      if (played && r) {
-        const actual = +r.home > +r.away ? 'h' : +r.home === +r.away ? 'd' : 'a';
-        hCls = actual === 'h' ? 'correct' : 'wrong';
-        dCls = actual === 'd' ? 'correct' : 'wrong';
-        aCls = actual === 'a' ? 'correct' : 'wrong';
+      let picksBar = '';
+      if (ps && ps.n > 0) {
+        const title = `${ps.n} pronósticos: ${ps.hp}% local · ${ps.dp}% empate · ${ps.ap}% visitante`;
+        if (played && r) {
+          const actual = +r.home > +r.away ? 'h' : +r.home === +r.away ? 'd' : 'a';
+          if (actual === 'h') {
+            const wrongPct = ps.dp + ps.ap;
+            picksBar = `<div class="picks-bar" title="${title}">
+              <div class="picks-seg correct" style="width:${ps.hp}%">${ps.hp >= 20 ? ps.hp+'%' : ''}</div>
+              <div class="picks-seg wrong" style="width:${wrongPct}%">${wrongPct >= 20 ? wrongPct+'%' : ''}</div>
+            </div>`;
+          } else if (actual === 'a') {
+            const wrongPct = ps.hp + ps.dp;
+            picksBar = `<div class="picks-bar" title="${title}">
+              <div class="picks-seg wrong" style="width:${wrongPct}%">${wrongPct >= 20 ? wrongPct+'%' : ''}</div>
+              <div class="picks-seg correct" style="width:${ps.ap}%">${ps.ap >= 20 ? ps.ap+'%' : ''}</div>
+            </div>`;
+          } else {
+            picksBar = `<div class="picks-bar" title="${title}">
+              <div class="picks-seg wrong" style="width:${ps.hp}%">${ps.hp >= 20 ? ps.hp+'%' : ''}</div>
+              <div class="picks-seg correct" style="width:${ps.dp}%">${ps.dp >= 20 ? ps.dp+'%' : ''}</div>
+              <div class="picks-seg wrong" style="width:${ps.ap}%">${ps.ap >= 20 ? ps.ap+'%' : ''}</div>
+            </div>`;
+          }
+        } else {
+          picksBar = `<div class="picks-bar" title="${title}">
+            <div class="picks-seg ph" style="width:${ps.hp}%">${ps.hp >= 20 ? ps.hp+'%' : ''}</div>
+            <div class="picks-seg pd" style="width:${ps.dp}%">${ps.dp >= 20 ? ps.dp+'%' : ''}</div>
+            <div class="picks-seg pa" style="width:${ps.ap}%">${ps.ap >= 20 ? ps.ap+'%' : ''}</div>
+          </div>`;
+        }
       }
-      const picksBar = ps && ps.n > 0
-        ? `<div class="picks-bar" title="${ps.n} pronósticos: ${ps.hp}% local · ${ps.dp}% empate · ${ps.ap}% visitante">
-            <div class="picks-seg ${hCls}" style="width:${ps.hp}%">${ps.hp >= 20 ? ps.hp+'%' : ''}</div>
-            <div class="picks-seg ${dCls}" style="width:${ps.dp}%">${ps.dp >= 20 ? ps.dp+'%' : ''}</div>
-            <div class="picks-seg ${aCls}" style="width:${ps.ap}%">${ps.ap >= 20 ? ps.ap+'%' : ''}</div>
-          </div>` : '';
 
       html+=`
         <div class="match-card ${played?'played':'pending'}${isKO?' knockout':''}${isFinal?' final-match':''}${isAdmin?' admin':''}" id="card-${m.id}">
