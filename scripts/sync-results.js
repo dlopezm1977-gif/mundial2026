@@ -164,9 +164,9 @@ async function getFirebaseToken() {
 }
 
 async function main() {
-  // 1. Fetch finished WC matches from football-data.org
+  // 1. Fetch finished and in-progress WC matches from football-data.org
   const apiRes = await fetch(
-    'https://api.football-data.org/v4/competitions/WC/matches?status=FINISHED&season=2026',
+    'https://api.football-data.org/v4/competitions/WC/matches?status=FINISHED,IN_PLAY,PAUSED&season=2026',
     { headers: { 'X-Auth-Token': FOOTBALL_TOKEN } }
   );
   if (!apiRes.ok) {
@@ -174,7 +174,9 @@ async function main() {
     throw new Error(`football-data.org error ${apiRes.status}: ${body}`);
   }
   const { matches: apiMatches = [] } = await apiRes.json();
-  console.log(`football-data.org: ${apiMatches.length} finished matches`);
+  const liveCount     = apiMatches.filter(m => m.status === 'IN_PLAY' || m.status === 'PAUSED').length;
+  const finishedCount = apiMatches.filter(m => m.status === 'FINISHED').length;
+  console.log(`football-data.org: ${finishedCount} finished, ${liveCount} in progress`);
 
   // 2. Build candidate updates from API results
   const candidates = {};
@@ -192,7 +194,8 @@ async function main() {
       unmatched.push(`${homeEN} vs ${awayEN}`);
       continue;
     }
-    candidates[localId] = { home: String(score.home), away: String(score.away) };
+    const isLive = m.status === 'IN_PLAY' || m.status === 'PAUSED';
+    candidates[localId] = { home: String(score.home), away: String(score.away), live: isLive };
   }
 
   if (unmatched.length) {
@@ -200,7 +203,7 @@ async function main() {
   }
 
   if (Object.keys(candidates).length === 0) {
-    console.log('No finished matches to sync');
+    console.log('No matches to sync');
     return;
   }
 
@@ -215,7 +218,7 @@ async function main() {
   const updates = {};
   for (const [id, score] of Object.entries(candidates)) {
     const prev = current[id];
-    if (!prev || prev.home !== score.home || prev.away !== score.away) {
+    if (!prev || prev.home !== score.home || prev.away !== score.away || !!prev.live !== score.live) {
       updates[id] = score;
     }
   }

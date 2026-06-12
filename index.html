@@ -95,6 +95,10 @@
   .match-card.knockout{background:rgba(59,130,246,.03);}
   .match-card.knockout.pending{border-left:3px solid rgba(59,130,246,.28);}
   .match-card.final-match{background:rgba(232,200,74,.04);border-color:rgba(232,200,74,.2);}
+  .match-card.live{border-left:3px solid rgba(234,179,8,.85);background:rgba(234,179,8,.04);}
+  .live-badge{display:block;font-size:.48rem;font-family:'DM Mono',monospace;color:rgba(234,179,8,.95);text-transform:uppercase;letter-spacing:.08em;margin-top:.15rem;}
+  .live-badge::before{content:'● ';animation:livePulse 1.2s ease-in-out infinite;}
+  @keyframes livePulse{0%,100%{opacity:1;}50%{opacity:.15;}}
   .picks-bar{grid-column:1/-1;display:flex;height:16px;border-top:1px solid var(--border);}
   .picks-seg{display:flex;align-items:center;justify-content:center;font-size:.52rem;font-family:'DM Mono',monospace;color:rgba(255,255,255,.85);overflow:hidden;white-space:nowrap;min-width:0;transition:width .4s ease;}
   .picks-seg.ph{background:rgba(59,130,246,.45);}
@@ -1102,9 +1106,11 @@ function renderMatches() {
       return ma-mb;
     }).forEach(m=>{
       const r=results[m.id];
-      const played=isPlayed(m.id);
-      const hScore=played?r.home:'';
-      const aScore=played?r.away:'';
+      const hasScore=isPlayed(m.id);
+      const isLive=hasScore && r && r.live===true;
+      const played=hasScore && !isLive;
+      const hScore=hasScore?r.home:'';
+      const aScore=hasScore?r.away:'';
       const spainTime=argToSpain(m.t);
       const isTve = isTVE(m) || tveMatches[m.id];
       const channel = isTve ? `${DAZN_LOGO} ${TVE_LOGO}` : DAZN_LOGO;
@@ -1160,11 +1166,11 @@ function renderMatches() {
       }
 
       html+=`
-        <div class="match-card ${played?'played':'pending'}${isKO?' knockout':''}${isFinal?' final-match':''}${isAdmin?' admin':''}" id="card-${m.id}">
+        <div class="match-card ${hasScore?(isLive?'live':'played'):'pending'}${isKO?' knockout':''}${isFinal?' final-match':''}${isAdmin?' admin':''}" id="card-${m.id}">
           ${isAdmin ? `<div class="match-btns">
             <button class="tve-btn${tveMatches[m.id]?' active':''}" onclick="toggleTVE(${m.id})" title="Marcar partido en TVE">📺</button>
           </div>` : ''}
-          <div class="match-time"><strong>${spainTime}</strong><span class="time-label">hora ESP</span><span class="channel">${channel}</span></div>
+          <div class="match-time"><strong>${spainTime}</strong>${isLive?'<span class="live-badge">EN VIVO</span>':`<span class="time-label">hora ESP</span><span class="channel">${channel}</span>`}</div>
           ${teamCellHTML(hR,'home')}
           <div class="match-score${canEdit?'':' no-click'}" ${canEdit?`onclick="openScoreModal(${m.id})"`:''}>
             <input class="score-input" type="number" value="${hScore}" min="0" max="99" placeholder="—" readonly>
