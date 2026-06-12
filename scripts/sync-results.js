@@ -15,7 +15,7 @@ const TEAM_MAP = {
   'Corea del Sur':        'South Korea',
   'República Checa':      'Czechia',
   'Canadá':               'Canada',
-  'Bosnia y Herzegovina': 'Bosnia and Herzegovina',
+  'Bosnia y Herzegovina': 'Bosnia-Herzegovina',
   'Estados Unidos':       'USA',
   'Paraguay':             'Paraguay',
   'Qatar':                'Qatar',
