@@ -164,6 +164,13 @@ async function getFirebaseToken() {
 }
 
 async function main() {
+  // Stop running after the tournament ends (final is July 19, grace day = July 20)
+  const today = new Date().toISOString().slice(0, 10);
+  if (today > '2026-07-20') {
+    console.log('Tournament over — nothing to sync');
+    return;
+  }
+
   // 1. Fetch finished and in-progress WC matches from football-data.org
   const apiRes = await fetch(
     'https://api.football-data.org/v4/competitions/WC/matches?status=FINISHED,IN_PLAY,PAUSED&season=2026',
