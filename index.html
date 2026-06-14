@@ -207,6 +207,24 @@
   .modal-score-inp:focus{border-color:var(--accent);}
   .modal-sep{font-family:'Bebas Neue',sans-serif;font-size:1.9rem;color:var(--muted);}
   .modal-actions{display:flex;gap:.6rem;justify-content:flex-end;margin-top:1rem;}
+  /* PICKS MODAL */
+  .picks-modal{max-width:420px;max-height:82vh;display:flex;flex-direction:column;padding:1.4rem 1.6rem;}
+  .picks-modal-header{margin-bottom:1rem;}
+  .picks-modal-header h3{font-family:'Bebas Neue',sans-serif;font-size:1.35rem;color:var(--accent);letter-spacing:.05em;margin-bottom:.25rem;}
+  .picks-modal-matchline{display:flex;align-items:center;justify-content:center;gap:.7rem;font-size:.82rem;font-weight:600;margin-bottom:.15rem;}
+  .picks-modal-score{font-family:'Bebas Neue',sans-serif;font-size:1.6rem;color:var(--text);line-height:1;}
+  .picks-modal-body{overflow-y:auto;flex:1;}
+  .picks-group{margin-bottom:1rem;}
+  .picks-group-title{font-size:.58rem;font-family:'DM Mono',monospace;text-transform:uppercase;letter-spacing:.1em;padding:.28rem .5rem;border-radius:4px;margin-bottom:.45rem;display:flex;align-items:center;gap:.4rem;}
+  .picks-group.exact .picks-group-title{color:var(--accent);background:rgba(232,200,74,.12);border-left:2px solid var(--accent);}
+  .picks-group.correct .picks-group-title{color:rgba(34,197,94,.9);background:rgba(34,197,94,.08);border-left:2px solid rgba(34,197,94,.6);}
+  .picks-group.wrong .picks-group-title{color:rgba(220,38,38,.8);background:rgba(220,38,38,.07);border-left:2px solid rgba(220,38,38,.4);}
+  .picks-group.pending .picks-group-title{color:var(--muted);background:rgba(255,255,255,.04);border-left:2px solid var(--border);}
+  .picks-row{display:flex;align-items:center;justify-content:space-between;padding:.32rem .5rem;border-radius:4px;font-size:.76rem;}
+  .picks-row:hover{background:rgba(255,255,255,.03);}
+  .picks-row-name{color:var(--text);flex:1;}
+  .picks-row-score{font-family:'DM Mono',monospace;font-size:.72rem;color:var(--muted);white-space:nowrap;}
+  .picks-bar{cursor:pointer;}
   /* PENALTIES */
   .penalty-row{display:flex;align-items:center;justify-content:center;gap:.75rem;
     margin-top:.9rem;padding:.7rem;background:rgba(232,200,74,.06);border:1px dashed rgba(232,200,74,.25);
@@ -533,6 +551,23 @@ function switchInstall(id,btn){
   </div>
 </div>
 
+<div class="modal-overlay" id="picksModal" onclick="if(event.target===this)closePicksModal()">
+  <div class="modal picks-modal">
+    <div class="picks-modal-header">
+      <h3 id="picksModalTitle">Pronósticos</h3>
+      <div class="picks-modal-matchline">
+        <span id="picksModalHome"></span>
+        <span class="picks-modal-score" id="picksModalScore"></span>
+        <span id="picksModalAway"></span>
+      </div>
+    </div>
+    <div class="picks-modal-body" id="picksModalBody"></div>
+    <div class="modal-actions">
+      <button class="btn" onclick="closePicksModal()">Cerrar</button>
+    </div>
+  </div>
+</div>
+
 <script>
 // ── FLAGS ──────────────────────────────────────────────
 const FLAG_CODES = {
@@ -761,6 +796,7 @@ let activeDateFilter = null;
 let statsExpanded = localStorage.getItem('statsExpanded') === 'true';
 let filtersExpanded = localStorage.getItem('filtersExpanded') === 'true';
 let porraStats = {};
+let porrasRaw = null;
 let datesExpanded = false;
 let currentEditId = null;
 let isSyncing = false;
@@ -862,6 +898,7 @@ async function loadPorraStats() {
     const res = await fetch(FIREBASE_URL + '/porras.json');
     if (!res.ok) { console.warn('loadPorraStats: HTTP', res.status); return; }
     const data = await res.json();
+    porrasRaw = data;
     porraStats = computePorraStats(data);
     const total = Object.keys(porraStats).length;
     console.log('porraStats cargado:', total, 'partidos con pronósticos');
@@ -1166,29 +1203,30 @@ function renderMatches() {
       let picksBar = '';
       if (ps && ps.n > 0) {
         const title = `${ps.n} pronósticos: ${ps.hp}% local · ${ps.dp}% empate · ${ps.ap}% visitante`;
+        const barClick = `onclick="openPicksModal(${m.id})"`;
         if (played && r) {
           const actual = +r.home > +r.away ? 'h' : +r.home === +r.away ? 'd' : 'a';
           if (actual === 'h') {
             const wrongPct = ps.dp + ps.ap;
-            picksBar = `<div class="picks-bar" title="${title}">
+            picksBar = `<div class="picks-bar" title="${title}" ${barClick}>
               <div class="picks-seg correct" style="width:${ps.hp}%">${ps.hp >= 20 ? ps.hp+'%' : ''}</div>
               <div class="picks-seg wrong" style="width:${wrongPct}%">${wrongPct >= 20 ? wrongPct+'%' : ''}</div>
             </div>`;
           } else if (actual === 'a') {
             const wrongPct = ps.hp + ps.dp;
-            picksBar = `<div class="picks-bar" title="${title}">
+            picksBar = `<div class="picks-bar" title="${title}" ${barClick}>
               <div class="picks-seg wrong" style="width:${wrongPct}%">${wrongPct >= 20 ? wrongPct+'%' : ''}</div>
               <div class="picks-seg correct" style="width:${ps.ap}%">${ps.ap >= 20 ? ps.ap+'%' : ''}</div>
             </div>`;
           } else {
-            picksBar = `<div class="picks-bar" title="${title}">
+            picksBar = `<div class="picks-bar" title="${title}" ${barClick}>
               <div class="picks-seg wrong" style="width:${ps.hp}%">${ps.hp >= 20 ? ps.hp+'%' : ''}</div>
               <div class="picks-seg correct" style="width:${ps.dp}%">${ps.dp >= 20 ? ps.dp+'%' : ''}</div>
               <div class="picks-seg wrong" style="width:${ps.ap}%">${ps.ap >= 20 ? ps.ap+'%' : ''}</div>
             </div>`;
           }
         } else {
-          picksBar = `<div class="picks-bar" title="${title}">
+          picksBar = `<div class="picks-bar" title="${title}" ${barClick}>
             <div class="picks-seg ph" style="width:${ps.hp}%">${ps.hp >= 20 ? ps.hp+'%' : ''}</div>
             <div class="picks-seg pd" style="width:${ps.dp}%">${ps.dp >= 20 ? ps.dp+'%' : ''}</div>
             <div class="picks-seg pa" style="width:${ps.ap}%">${ps.ap >= 20 ? ps.ap+'%' : ''}</div>
@@ -1261,6 +1299,79 @@ function openScoreModal(id) {
   setTimeout(()=>document.getElementById('smScore1').focus(),80);
 }
 function closeScoreModal(){document.getElementById('scoreModal').classList.remove('open');currentEditId=null;}
+
+function openPicksModal(matchId) {
+  const m = ALL_BY_ID[matchId];
+  if (!m || !porrasRaw) return;
+  const r = RESULTS[matchId] || null;
+  const hasScore = isPlayed(matchId);
+  const isLive = hasScore && r && r.live === true;
+  const played = hasScore && !isLive;
+
+  // Collect all picks for this match
+  const picks = [];
+  Object.values(porrasRaw).forEach(player => {
+    if (!player.locked || !player.picks) return;
+    const pick = player.picks[matchId];
+    if (!pick || pick.h === undefined || pick.a === undefined) return;
+    picks.push({ name: player.displayName || '?', h: +pick.h, a: +pick.a });
+  });
+  if (!picks.length) return;
+
+  let actualH, actualA, actualResult;
+  if (hasScore && r) {
+    actualH = +r.home; actualA = +r.away;
+    actualResult = actualH > actualA ? 'h' : actualH === actualA ? 'd' : 'a';
+  }
+
+  const exact = [], correct = [], wrong = [];
+  const byPredH = {}, byPredD = {}, byPredA = {};
+
+  picks.forEach(p => {
+    const predResult = p.h > p.a ? 'h' : p.h === p.a ? 'd' : 'a';
+    if (hasScore) {
+      if (p.h === actualH && p.a === actualA) exact.push(p);
+      else if (predResult === actualResult) correct.push(p);
+      else wrong.push(p);
+    } else {
+      if (predResult === 'h') { byPredH[`${p.h}-${p.a}`] = byPredH[`${p.h}-${p.a}`] || []; byPredH[`${p.h}-${p.a}`].push(p); }
+      else if (predResult === 'd') { byPredD[`${p.h}-${p.a}`] = byPredD[`${p.h}-${p.a}`] || []; byPredD[`${p.h}-${p.a}`].push(p); }
+      else { byPredA[`${p.h}-${p.a}`] = byPredA[`${p.h}-${p.a}`] || []; byPredA[`${p.h}-${p.a}`].push(p); }
+    }
+  });
+
+  [exact, correct, wrong].forEach(g => g.sort((a,b) => a.name.localeCompare(b.name)));
+
+  const rowsHTML = (arr) => arr.map(p =>
+    `<div class="picks-row"><span class="picks-row-name">${p.name}</span><span class="picks-row-score">${p.h} — ${p.a}</span></div>`
+  ).join('');
+
+  let bodyHTML = '';
+  if (hasScore) {
+    if (exact.length) bodyHTML += `<div class="picks-group exact"><div class="picks-group-title">🎯 Marcador exacto (${exact.length})</div>${rowsHTML(exact)}</div>`;
+    if (correct.length) bodyHTML += `<div class="picks-group correct"><div class="picks-group-title">✓ Resultado correcto (${correct.length})</div>${rowsHTML(correct)}</div>`;
+    if (wrong.length) bodyHTML += `<div class="picks-group wrong"><div class="picks-group-title">✗ Fallo (${wrong.length})</div>${rowsHTML(wrong)}</div>`;
+  } else {
+    const pendingGroup = (label, map) => {
+      const sorted = Object.entries(map).sort((a,b) => b[1].length - a[1].length);
+      if (!sorted.length) return '';
+      const rows = sorted.map(([score, ps]) =>
+        ps.map(p => `<div class="picks-row"><span class="picks-row-name">${p.name}</span><span class="picks-row-score">${p.h} — ${p.a}</span></div>`).join('')
+      ).join('');
+      return `<div class="picks-group pending"><div class="picks-group-title">${label} (${sorted.reduce((s,[,ps])=>s+ps.length,0)})</div>${rows}</div>`;
+    };
+    bodyHTML += pendingGroup('Local', byPredH) + pendingGroup('Empate', byPredD) + pendingGroup('Visitante', byPredA);
+  }
+
+  const scoreDisplay = hasScore ? `${actualH} — ${actualA}${isLive ? ' 🟡' : ''}` : '— : —';
+  document.getElementById('picksModalTitle').textContent = `Pronósticos · ${m.home} vs ${m.away}`;
+  document.getElementById('picksModalHome').innerHTML = flag(m.home, 20) + ' ' + m.home;
+  document.getElementById('picksModalAway').innerHTML = m.away + ' ' + flag(m.away, 20);
+  document.getElementById('picksModalScore').textContent = scoreDisplay;
+  document.getElementById('picksModalBody').innerHTML = bodyHTML || '<p style="color:var(--muted);font-size:.8rem">Sin pronósticos</p>';
+  document.getElementById('picksModal').classList.add('open');
+}
+function closePicksModal(){document.getElementById('picksModal').classList.remove('open');}
 
 function checkPenaltyVisibility(){
   const m=ALL_BY_ID[currentEditId];
