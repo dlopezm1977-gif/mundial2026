@@ -190,6 +190,8 @@ async function main() {
 
   // 2. Build candidate updates from API results
   const candidates = {};
+  const apiIdByLocalId = {};  // localId → football-data.org match id
+  const statusByLocalId = {}; // localId → match status
   const unmatched = [];
 
   for (const m of apiMatches) {
@@ -206,6 +208,8 @@ async function main() {
     }
     const isLive = m.status === 'IN_PLAY' || m.status === 'PAUSED';
     candidates[localId] = { home: String(score.home), away: String(score.away), live: isLive };
+    apiIdByLocalId[localId] = m.id;
+    statusByLocalId[localId] = m.status;
   }
 
   if (unmatched.length) {
@@ -248,6 +252,9 @@ async function main() {
 
   // 7. Sync top scorers (non-fatal)
   await syncScorers(token).catch(e => console.warn('syncScorers failed:', e.message));
+
+  // 8. Sync goal details (non-fatal)
+  await syncGoals(token, apiIdByLocalId, statusByLocalId).catch(e => console.warn('syncGoals failed:', e.message));
 }
 
 async function syncScorers(token) {
@@ -283,6 +290,73 @@ async function syncScorers(token) {
   });
   if (!putRes.ok) throw new Error(`Scorers PUT failed: ${putRes.status}`);
   console.log(`Scorers updated: ${data.length} players, leader: ${data[0]?.name} (${data[0]?.goals} goles)`);
+}
+
+async function syncGoals(token, apiIdByLocalId, statusByLocalId) {
+  const localIds = Object.keys(apiIdByLocalId);
+  if (localIds.length === 0) return;
+
+  // Fetch already-cached goal entries from Firebase
+  const cachedRes = await fetch(`${FIREBASE_DB_URL}/goals.json?auth=${token}`);
+  const cached = (await cachedRes.json()) || {};
+
+  const goalsToWrite = {};
+  let fetched = 0;
+
+  for (const localId of localIds) {
+    const status = statusByLocalId[localId];
+    const isLive = status === 'IN_PLAY' || status === 'PAUSED';
+    const isFinished = status === 'FINISHED';
+
+    // Skip finished matches already cached
+    if (isFinished && cached[localId]) continue;
+
+    const apiId = apiIdByLocalId[localId];
+
+    // Throttle: 100 ms between requests (free tier = 10 req/min)
+    if (fetched > 0) await new Promise(r => setTimeout(r, 150));
+
+    const res = await fetch(
+      `https://api.football-data.org/v4/matches/${apiId}`,
+      { headers: { 'X-Auth-Token': FOOTBALL_TOKEN } }
+    );
+    fetched++;
+
+    if (!res.ok) {
+      console.warn(`Goals fetch failed for match ${apiId}: ${res.status}`);
+      continue;
+    }
+
+    const { goals: rawGoals = [] } = await res.json();
+
+    const goals = rawGoals.map(g => {
+      const teamEN = g.team?.name || '';
+      const teamES = EN_TO_ES[teamEN] || teamEN;
+      return {
+        minute: g.minute ?? null,
+        minuteExtra: g.injuryTime ?? null,
+        type: g.type || 'REGULAR',       // REGULAR | PENALTY | OWN_GOAL
+        scorer: g.scorer?.name || '',
+        team: teamES,
+        assist: g.assist?.name || null,
+      };
+    });
+
+    goalsToWrite[localId] = goals;
+  }
+
+  if (Object.keys(goalsToWrite).length === 0) {
+    console.log('Goals already up to date');
+    return;
+  }
+
+  const patchRes = await fetch(`${FIREBASE_DB_URL}/goals.json?auth=${token}`, {
+    method: 'PATCH',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(goalsToWrite),
+  });
+  if (!patchRes.ok) throw new Error(`Goals PATCH failed: ${patchRes.status}`);
+  console.log(`Goals updated for ${Object.keys(goalsToWrite).length} match(es)`);
 }
 
 main().catch(err => { console.error(err); process.exit(1); });
