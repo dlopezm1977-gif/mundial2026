@@ -231,19 +231,54 @@ async function main() {
   }
 
   if (Object.keys(updates).length === 0) {
-    console.log('Firebase already up to date');
+    console.log('Results already up to date');
+  } else {
+    // 6. PATCH only the changed entries (leaves other results untouched)
+    const patchRes = await fetch(`${FIREBASE_DB_URL}/results.json?auth=${token}`, {
+      method: 'PATCH',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(updates),
+    });
+    if (!patchRes.ok) throw new Error(`Firebase PATCH failed: ${patchRes.status}`);
+    console.log(`Updated ${Object.keys(updates).length} result(s):`, updates);
+  }
+
+  // 7. Sync top scorers
+  await syncScorers(token);
+}
+
+async function syncScorers(token) {
+  const res = await fetch(
+    'https://api.football-data.org/v4/competitions/2000/scorers?season=2026&limit=30',
+    { headers: { 'X-Auth-Token': FOOTBALL_TOKEN } }
+  );
+  if (!res.ok) { console.warn('Scorers fetch failed:', res.status); return; }
+  const { scorers = [] } = await res.json();
+
+  const data = scorers.map(s => ({
+    name: s.player.name,
+    team: s.team.shortName || s.team.name,
+    goals: s.goals,
+    assists: s.assists ?? 0,
+    penalties: s.penalties ?? 0,
+    playedMatches: s.playedMatches,
+  }));
+
+  // Only write if changed
+  const currentRes = await fetch(`${FIREBASE_DB_URL}/scorers.json?auth=${token}`);
+  const current = await currentRes.json();
+  if (JSON.stringify(current) === JSON.stringify(data)) {
+    console.log('Scorers already up to date');
     return;
   }
 
-  // 6. PATCH only the changed entries (leaves other results untouched)
-  const patchRes = await fetch(`${FIREBASE_DB_URL}/results.json?auth=${token}`, {
-    method: 'PATCH',
+  const putRes = await fetch(`${FIREBASE_DB_URL}/scorers.json?auth=${token}`, {
+    method: 'PUT',
     headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify(updates),
+    body: JSON.stringify(data),
   });
-  if (!patchRes.ok) throw new Error(`Firebase PATCH failed: ${patchRes.status}`);
-
-  console.log(`Updated ${Object.keys(updates).length} result(s):`, updates);
+  if (!putRes.ok) throw new Error(`Scorers PUT failed: ${putRes.status}`);
+  console.log(`Scorers updated: ${data.length} players, leader: ${data[0]?.name} (${data[0]?.goals} goles)`);
 }
 
 main().catch(err => { console.error(err); process.exit(1); });

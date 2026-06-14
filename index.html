@@ -167,6 +167,16 @@
   .legend{display:flex;gap:1.4rem;padding:.6rem 0;margin-bottom:1.2rem;flex-wrap:wrap;}
   .legend-item{display:flex;align-items:center;gap:.38rem;font-size:.6rem;color:var(--muted);}
   .legend-dot{width:3px;height:13px;border-radius:2px;}
+  /* GOLEADORES */
+  .scorers-table{width:100%;border-collapse:collapse;font-size:.78rem;}
+  .scorers-table th{font-family:'DM Mono',monospace;font-size:.55rem;color:var(--muted);text-transform:uppercase;letter-spacing:.07em;padding:.4rem .6rem;text-align:center;border-bottom:1px solid var(--border);}
+  .scorers-table th:nth-child(1),.scorers-table th:nth-child(2),.scorers-table th:nth-child(3){text-align:left;}
+  .scorers-table td{padding:.55rem .6rem;text-align:center;border-bottom:1px solid rgba(31,45,74,.4);}
+  .scorers-table td:nth-child(1),.scorers-table td:nth-child(2),.scorers-table td:nth-child(3){text-align:left;}
+  .scorers-table tr:last-child td{border-bottom:none;}
+  .scorers-table tr:hover td{background:rgba(255,255,255,.02);}
+  .scorer-rank{font-family:'DM Mono',monospace;font-size:.6rem;color:var(--muted);width:24px;}
+  .scorer-goals{font-family:'Bebas Neue',sans-serif;font-size:1.1rem;color:var(--accent);line-height:1;}
   /* CSV */
   .csv-panel{background:var(--surface);border:1px solid var(--border);border-radius:8px;padding:1.5rem;}
   .csv-panel h3{font-family:'Bebas Neue',sans-serif;font-size:1.3rem;letter-spacing:.05em;color:var(--accent);margin-bottom:.5rem;}
@@ -294,6 +304,13 @@
     .standings-table td:nth-child(6),
     .standings-table th:nth-child(7),
     .standings-table td:nth-child(7){display:none;}
+    /* Goleadores móvil: ocultar PJ, asistencias y penaltis */
+    .scorers-table th:nth-child(4),
+    .scorers-table td:nth-child(4),
+    .scorers-table th:nth-child(6),
+    .scorers-table td:nth-child(6),
+    .scorers-table th:nth-child(7),
+    .scorers-table td:nth-child(7){display:none;}
     .standings-table th{padding:.32rem .28rem;font-size:.5rem;}
     .standings-table td{padding:.42rem .28rem;font-size:.68rem;}
     .standings-table th:first-child{padding-left:.5rem;}
@@ -403,7 +420,8 @@ function switchInstall(id,btn){
   <button class="tab active" onclick="switchTab('partidos')">Partidos</button>
   <button class="tab" onclick="switchTab('clasificacion')">Clasificación</button>
   <button class="tab" onclick="switchTab('cuadro')">Cuadro KO</button>
-  <button class="tab" onclick="switchTab('datos')">Datos CSV</button>
+  <button class="tab" onclick="switchTab('goleadores')">Goleadores</button>
+  <button class="tab" id="tab-datos" style="display:none" onclick="switchTab('datos')">Datos CSV</button>
 </div>
 
 <div class="container">
@@ -427,6 +445,9 @@ function switchInstall(id,btn){
   </div>
   <div class="section" id="sec-cuadro">
     <div id="bracketContainer"></div>
+  </div>
+  <div class="section" id="sec-goleadores">
+    <div id="scorersContent" style="padding:1rem 0"></div>
   </div>
   <div class="section" id="sec-datos">
     <div class="csv-panel">
@@ -760,6 +781,8 @@ const authReady = new Promise(resolve => {
     const actions = document.getElementById('adminActions');
     if (btn) btn.innerText = isAdmin ? '🚪 Logout' : '🔐 Admin';
     if (actions) actions.style.display = isAdmin ? 'flex' : 'none';
+    const tabDatos = document.getElementById('tab-datos');
+    if (tabDatos) tabDatos.style.display = isAdmin ? '' : 'none';
     if (!authResolved) { authResolved = true; resolve(user); }
     else { buildFilterBar(); renderMatches(); }
   });
@@ -1645,14 +1668,50 @@ function renderBracket() {
 
 // ── TABS ──────────────────────────────────────────────
 function switchTab(tab){
-  document.querySelectorAll('.tab').forEach((t,i)=>{
-    t.classList.toggle('active',['partidos','clasificacion','cuadro','datos'][i]===tab);
+  document.querySelectorAll('.tab').forEach(t=>{
+    const key = t.getAttribute('onclick').match(/'(\w+)'/)[1];
+    t.classList.toggle('active', key === tab);
   });
   document.querySelectorAll('.section').forEach(s=>s.classList.remove('active'));
   document.getElementById('sec-'+tab).classList.add('active');
   if(tab==='clasificacion')renderStandings();
   if(tab==='cuadro')renderBracket();
   if(tab==='datos')refreshCsvPreview();
+  if(tab==='goleadores')loadAndRenderScorers();
+}
+
+async function loadAndRenderScorers(){
+  const el = document.getElementById('scorersContent');
+  el.innerHTML = '<p style="color:var(--muted);font-size:.8rem;padding:.5rem 0">Cargando goleadores...</p>';
+  try {
+    const res = await fetch(FIREBASE_URL + '/scorers.json');
+    const data = await res.json();
+    if(!data || !data.length){
+      el.innerHTML = '<p style="color:var(--muted);font-size:.8rem;padding:.5rem 0">Aún no hay datos de goleadores disponibles.</p>';
+      return;
+    }
+    let html = `<table class="scorers-table">
+      <thead><tr>
+        <th>#</th><th>Jugador</th><th>Equipo</th>
+        <th>PJ</th><th>Goles</th><th>Asist.</th><th>Pen.</th>
+      </tr></thead><tbody>`;
+    data.forEach((s,i)=>{
+      const medal = i===0?'🥇':i===1?'🥈':i===2?'🥉':'';
+      html+=`<tr>
+        <td class="scorer-rank">${medal||i+1}</td>
+        <td><strong>${s.name}</strong></td>
+        <td style="color:var(--muted);font-size:.72rem">${s.team}</td>
+        <td style="color:var(--muted)">${s.playedMatches}</td>
+        <td><span class="scorer-goals">${s.goals}</span></td>
+        <td>${s.assists}</td>
+        <td style="color:var(--muted)">${s.penalties}</td>
+      </tr>`;
+    });
+    html += '</tbody></table>';
+    el.innerHTML = html;
+  } catch(e){
+    el.innerHTML = '<p style="color:var(--muted);font-size:.8rem">Error cargando goleadores.</p>';
+  }
 }
 
 // ── KEYBOARD ──────────────────────────────────────────
