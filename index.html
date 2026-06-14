@@ -224,7 +224,8 @@
   .picks-row:hover{background:rgba(255,255,255,.03);}
   .picks-row-name{color:var(--text);flex:1;}
   .picks-row-score{font-family:'DM Mono',monospace;font-size:.72rem;color:var(--muted);white-space:nowrap;}
-  .picks-bar{cursor:pointer;}
+  .picks-bar{cursor:pointer;touch-action:manipulation;-webkit-tap-highlight-color:rgba(232,200,74,.12);}
+  .picks-clickable{cursor:pointer;touch-action:manipulation;-webkit-tap-highlight-color:rgba(232,200,74,.12);}
   /* PENALTIES */
   .penalty-row{display:flex;align-items:center;justify-content:center;gap:.75rem;
     margin-top:.9rem;padding:.7rem;background:rgba(232,200,74,.06);border:1px dashed rgba(232,200,74,.25);
@@ -1241,7 +1242,7 @@ function renderMatches() {
           </div>` : ''}
           <div class="match-time"><strong>${spainTime}</strong>${isLive?'<span class="live-badge">EN VIVO</span>':`<span class="time-label">hora ESP</span><span class="channel">${channel}</span>`}</div>
           ${teamCellHTML(hR,'home')}
-          <div class="match-score${canEdit?'':' no-click'}" ${canEdit?`onclick="openScoreModal(${m.id})"`:''}>
+          <div class="match-score${canEdit?'':hasScore?' no-click picks-clickable':' no-click'}" ${canEdit?`onclick="openScoreModal(${m.id})"`:hasScore?`onclick="openPicksModal(${m.id})"`:''}>
             <input class="score-input" type="number" value="${hScore}" min="0" max="99" placeholder="—" readonly>
             <span class="score-sep">:</span>
             <input class="score-input" type="number" value="${aScore}" min="0" max="99" placeholder="—" readonly>
