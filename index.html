@@ -1698,6 +1698,7 @@ async function loadAndRenderScorers(){
       el.innerHTML = '<p style="color:var(--muted);font-size:.8rem;padding:.5rem 0">Aún no hay datos de goleadores disponibles.</p>';
       return;
     }
+    data.sort((a,b) => b.goals - a.goals || b.assists - a.assists || a.name.localeCompare(b.name));
     const rankClass = ['top1','top2','top3'];
     const medal = ['🥇','🥈','🥉'];
     let html = `<table class="scorers-table">
