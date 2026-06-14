@@ -243,8 +243,8 @@ async function main() {
     console.log(`Updated ${Object.keys(updates).length} result(s):`, updates);
   }
 
-  // 7. Sync top scorers
-  await syncScorers(token);
+  // 7. Sync top scorers (non-fatal)
+  await syncScorers(token).catch(e => console.warn('syncScorers failed:', e.message));
 }
 
 async function syncScorers(token) {
