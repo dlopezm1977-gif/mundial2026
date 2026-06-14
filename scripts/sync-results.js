@@ -136,6 +136,9 @@ const GROUP_MATCHES = [
   {id:72, home:'Jordania',         away:'Argentina'},
 ];
 
+// Reverse map: English name → Spanish name (for flag function in the app)
+const EN_TO_ES = Object.fromEntries(Object.entries(TEAM_MAP).map(([es, en]) => [en, es]));
+
 // Build lookup: "HomeEN|AwayEN" → local match id
 const lookup = new Map();
 for (const m of GROUP_MATCHES) {
@@ -257,7 +260,8 @@ async function syncScorers(token) {
 
   const data = scorers.map(s => ({
     name: s.player.name,
-    team: s.team.shortName || s.team.name,
+    team: EN_TO_ES[s.team.name] || s.team.name,
+    tla: s.team.tla,
     goals: s.goals,
     assists: s.assists ?? 0,
     penalties: s.penalties ?? 0,

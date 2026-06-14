@@ -177,6 +177,14 @@
   .scorers-table tr:hover td{background:rgba(255,255,255,.02);}
   .scorer-rank{font-family:'DM Mono',monospace;font-size:.6rem;color:var(--muted);width:24px;}
   .scorer-goals{font-family:'Bebas Neue',sans-serif;font-size:1.1rem;color:var(--accent);line-height:1;}
+  .scorers-table tr.top1{background:rgba(232,200,74,.1);border-left:3px solid var(--accent);}
+  .scorers-table tr.top2{background:rgba(192,192,192,.07);border-left:3px solid rgba(192,192,192,.5);}
+  .scorers-table tr.top3{background:rgba(205,127,50,.07);border-left:3px solid rgba(205,127,50,.5);}
+  .scorers-table tr.top1 .scorer-goals{font-size:1.5rem;color:var(--accent);}
+  .scorers-table tr.top2 .scorer-goals{font-size:1.3rem;color:rgba(192,192,192,.9);}
+  .scorers-table tr.top3 .scorer-goals{font-size:1.2rem;color:rgba(205,127,50,.9);}
+  .scorer-team{display:flex;align-items:center;gap:.35rem;}
+  .scorer-tla{font-family:'DM Mono',monospace;font-size:.62rem;color:var(--muted);}
   /* CSV */
   .csv-panel{background:var(--surface);border:1px solid var(--border);border-radius:8px;padding:1.5rem;}
   .csv-panel h3{font-family:'Bebas Neue',sans-serif;font-size:1.3rem;letter-spacing:.05em;color:var(--accent);margin-bottom:.5rem;}
@@ -1690,17 +1698,21 @@ async function loadAndRenderScorers(){
       el.innerHTML = '<p style="color:var(--muted);font-size:.8rem;padding:.5rem 0">Aún no hay datos de goleadores disponibles.</p>';
       return;
     }
+    const rankClass = ['top1','top2','top3'];
+    const medal = ['🥇','🥈','🥉'];
     let html = `<table class="scorers-table">
       <thead><tr>
         <th>#</th><th>Jugador</th><th>Equipo</th>
         <th>PJ</th><th>Goles</th><th>Asist.</th><th>Pen.</th>
       </tr></thead><tbody>`;
     data.forEach((s,i)=>{
-      const medal = i===0?'🥇':i===1?'🥈':i===2?'🥉':'';
-      html+=`<tr>
-        <td class="scorer-rank">${medal||i+1}</td>
+      const rc = rankClass[i] || '';
+      const rank = i < 3 ? medal[i] : `<span style="font-size:.7rem">${i+1}</span>`;
+      const teamFlag = flag(s.team, 18);
+      html+=`<tr class="${rc}">
+        <td class="scorer-rank">${rank}</td>
         <td><strong>${s.name}</strong></td>
-        <td style="color:var(--muted);font-size:.72rem">${s.team}</td>
+        <td><div class="scorer-team">${teamFlag}<span class="scorer-tla">${s.tla||s.team}</span></div></td>
         <td style="color:var(--muted)">${s.playedMatches}</td>
         <td><span class="scorer-goals">${s.goals}</span></td>
         <td>${s.assists}</td>
