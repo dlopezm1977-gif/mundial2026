@@ -1341,7 +1341,7 @@ function openPicksModal(matchId) {
     }
   });
 
-  [exact, correct, wrong].forEach(g => g.sort((a,b) => a.name.localeCompare(b.name)));
+  [exact, correct, wrong].forEach(g => g.sort((a,b) => a.h - b.h || a.a - b.a || a.name.localeCompare(b.name)));
 
   const rowsHTML = (arr) => arr.map(p =>
     `<div class="picks-row"><span class="picks-row-name">${p.name}</span><span class="picks-row-score">${p.h} — ${p.a}</span></div>`
