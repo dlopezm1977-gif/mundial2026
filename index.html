@@ -1242,7 +1242,7 @@ function renderMatches() {
           </div>` : ''}
           <div class="match-time"><strong>${spainTime}</strong>${isLive?'<span class="live-badge">EN VIVO</span>':`<span class="time-label">hora ESP</span><span class="channel">${channel}</span>`}</div>
           ${teamCellHTML(hR,'home')}
-          <div class="match-score${canEdit?'':hasScore?' no-click picks-clickable':' no-click'}" ${canEdit?`onclick="openScoreModal(${m.id})"`:hasScore?`onclick="openPicksModal(${m.id})"`:''}>
+          <div class="match-score${canEdit?'':' picks-clickable'}" ${canEdit?`onclick="openScoreModal(${m.id})"`:`onclick="openPicksModal(${m.id})"`}>
             <input class="score-input" type="number" value="${hScore}" min="0" max="99" placeholder="—" readonly>
             <span class="score-sep">:</span>
             <input class="score-input" type="number" value="${aScore}" min="0" max="99" placeholder="—" readonly>
@@ -1354,7 +1354,7 @@ function openPicksModal(matchId) {
     if (wrong.length) bodyHTML += `<div class="picks-group wrong"><div class="picks-group-title">✗ Fallo (${wrong.length})</div>${rowsHTML(wrong)}</div>`;
   } else {
     const pendingGroup = (label, map) => {
-      const sorted = Object.entries(map).sort((a,b) => b[1].length - a[1].length);
+      const sorted = Object.entries(map).sort((a,b) => { const [ah,aa]=a[0].split('-').map(Number),[bh,ba]=b[0].split('-').map(Number); return ah-bh||aa-ba; });
       if (!sorted.length) return '';
       const rows = sorted.map(([score, ps]) =>
         ps.map(p => `<div class="picks-row"><span class="picks-row-name">${p.name}</span><span class="picks-row-score">${p.h} — ${p.a}</span></div>`).join('')
