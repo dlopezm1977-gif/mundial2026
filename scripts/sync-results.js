@@ -327,7 +327,9 @@ async function syncGoals(token, apiIdByLocalId, statusByLocalId) {
       continue;
     }
 
-    const { goals: rawGoals = [] } = await res.json();
+    const matchData = await res.json();
+    const rawGoals = matchData.goals ?? [];
+    console.log(`  match ${apiId} (localId ${localId}): ${rawGoals.length} goals from API`);
 
     const goals = rawGoals.map(g => {
       const teamEN = g.team?.name || '';
