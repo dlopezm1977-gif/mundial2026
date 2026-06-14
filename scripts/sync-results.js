@@ -253,8 +253,8 @@ async function main() {
   // 7. Sync top scorers (non-fatal)
   await syncScorers(token).catch(e => console.warn('syncScorers failed:', e.message));
 
-  // 8. Sync goal details (non-fatal)
-  await syncGoals(token, apiIdByLocalId, statusByLocalId).catch(e => console.warn('syncGoals failed:', e.message));
+  // syncGoals disabled: football-data.org free tier returns 0 goals per match
+  // await syncGoals(token, apiIdByLocalId, statusByLocalId).catch(e => console.warn('syncGoals failed:', e.message));
 }
 
 async function syncScorers(token) {
