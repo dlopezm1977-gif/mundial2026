@@ -1303,7 +1303,7 @@ function closeScoreModal(){document.getElementById('scoreModal').classList.remov
 function openPicksModal(matchId) {
   const m = ALL_BY_ID[matchId];
   if (!m || !porrasRaw) return;
-  const r = RESULTS[matchId] || null;
+  const r = results[matchId] || null;
   const hasScore = isPlayed(matchId);
   const isLive = hasScore && r && r.live === true;
   const played = hasScore && !isLive;
