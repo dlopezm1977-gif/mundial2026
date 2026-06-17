@@ -226,6 +226,43 @@
   .picks-row-score{font-family:'DM Mono',monospace;font-size:.72rem;color:var(--muted);white-space:nowrap;}
   .picks-bar{cursor:pointer;touch-action:manipulation;-webkit-tap-highlight-color:rgba(232,200,74,.12);}
   .picks-clickable{cursor:pointer;touch-action:manipulation;-webkit-tap-highlight-color:rgba(232,200,74,.12);}
+  /* ALBUM */
+  .album-toolbar{display:flex;align-items:center;gap:1rem;margin-bottom:1.2rem;flex-wrap:wrap;}
+  .album-toolbar input[type=search]{flex:1;min-width:180px;padding:.5rem .8rem;border-radius:6px;
+    border:1px solid var(--border);background:var(--surface2);color:var(--text);font-size:.85rem;outline:none;}
+  .album-toolbar input[type=search]:focus{border-color:var(--accent);}
+  .album-stats{font-size:.72rem;font-family:'DM Mono',monospace;color:var(--muted);white-space:nowrap;}
+  .album-filters{display:flex;gap:.35rem;flex-wrap:wrap;}
+  .alb-f{background:var(--surface2);border:1px solid var(--border);border-radius:5px;
+    color:var(--muted);font-size:.7rem;padding:.3rem .65rem;cursor:pointer;white-space:nowrap;}
+  .alb-f.active{background:rgba(232,200,74,.15);border-color:var(--accent);color:var(--accent);}
+  .album-fwc{margin-bottom:1.5rem;}
+  .album-group{margin-bottom:1.5rem;}
+  .album-group-hdr{font-family:'Bebas Neue',sans-serif;font-size:.9rem;color:var(--accent2);
+    letter-spacing:.08em;margin-bottom:.6rem;padding-bottom:.3rem;border-bottom:1px solid var(--border);}
+  .album-teams{display:grid;grid-template-columns:repeat(auto-fill,minmax(210px,1fr));gap:1rem;}
+  .album-team{background:var(--surface2);border-radius:8px;padding:.6rem .7rem;}
+  .album-team-hdr{font-size:.68rem;font-family:'DM Mono',monospace;text-transform:uppercase;
+    letter-spacing:.06em;color:var(--muted);margin-bottom:.5rem;display:flex;align-items:center;gap:.35rem;}
+  .album-team-hdr .team-code{color:var(--text);font-weight:700;}
+  .stickers-grid{display:grid;grid-template-columns:repeat(5,1fr);gap:4px;}
+  .stk{border-radius:5px;font-size:.7rem;font-family:'DM Mono',monospace;text-align:center;
+    padding:.5rem .1rem;cursor:pointer;user-select:none;transition:opacity .1s;border:1px solid transparent;
+    line-height:1.3;min-height:38px;display:flex;align-items:center;justify-content:center;
+    touch-action:manipulation;-webkit-tap-highlight-color:transparent;}
+  .stk.s-falta{background:rgba(220,38,38,.1);color:rgba(220,38,38,.7);border-color:rgba(220,38,38,.25);}
+  .stk.s-tengo{background:rgba(34,197,94,.14);color:rgba(34,197,94,.9);border-color:rgba(34,197,94,.3);}
+  .stk.s-repe{background:rgba(59,130,246,.14);color:rgba(99,179,237,.9);border-color:rgba(59,130,246,.35);}
+  .stk.s-special.s-falta{background:rgba(220,38,38,.13);color:rgba(220,38,38,.85);border-color:rgba(220,38,38,.4);}
+  .stk.s-special.s-tengo{background:rgba(34,197,94,.2);color:rgba(34,197,94,1);border-color:rgba(34,197,94,.5);}
+  .stk.s-special.s-repe{background:rgba(59,130,246,.2);color:rgba(99,179,237,1);border-color:rgba(59,130,246,.5);}
+  .stk:hover{opacity:.8;}
+  .album-section-hidden{display:none;}
+  @media(max-width:680px){
+    .album-teams{grid-template-columns:1fr;}
+    .stickers-grid{grid-template-columns:repeat(5,1fr);gap:5px;}
+    .stk{font-size:.78rem;padding:.65rem .1rem;min-height:44px;}
+  }
   /* PENALTIES */
   .penalty-row{display:flex;align-items:center;justify-content:center;gap:.75rem;
     margin-top:.9rem;padding:.7rem;background:rgba(232,200,74,.06);border:1px dashed rgba(232,200,74,.25);
@@ -449,6 +486,7 @@ function switchInstall(id,btn){
   <button class="tab" onclick="switchTab('cuadro')">Cuadro KO</button>
   <button class="tab" onclick="switchTab('goleadores')">Goleadores</button>
   <button class="tab" id="tab-datos" style="display:none" onclick="switchTab('datos')">Datos CSV</button>
+  <button class="tab" id="tab-album" style="display:none" onclick="switchTab('album')">Álbum</button>
 </div>
 
 <div class="container">
@@ -486,6 +524,19 @@ function switchInstall(id,btn){
         <button class="btn" onclick="refreshCsvPreview()">↺ Actualizar</button>
       </div>
     </div>
+  </div>
+  <div class="section" id="sec-album">
+    <div class="album-toolbar">
+      <input type="search" id="albumSearch" placeholder="🔍  Buscar cromo… (ej: ESP01, FWC05)" oninput="applyAlbumFilter()" autocomplete="off">
+      <div class="album-filters">
+        <button class="alb-f active" onclick="setAlbumFilter('all',this)">Todos</button>
+        <button class="alb-f" onclick="setAlbumFilter('tengo',this)">✅ Tengo</button>
+        <button class="alb-f" onclick="setAlbumFilter('falta',this)">❌ Faltas</button>
+        <button class="alb-f" onclick="setAlbumFilter('repe',this)">🔄 Repes</button>
+      </div>
+      <div class="album-stats" id="albumStats"></div>
+    </div>
+    <div id="albumGrid"></div>
   </div>
 </div>
 
@@ -828,6 +879,9 @@ const authReady = new Promise(resolve => {
     if (actions) actions.style.display = isAdmin ? 'flex' : 'none';
     const tabDatos = document.getElementById('tab-datos');
     if (tabDatos) tabDatos.style.display = isAdmin ? '' : 'none';
+    const tabAlbum = document.getElementById('tab-album');
+    if (tabAlbum) tabAlbum.style.display = isAdmin ? '' : 'none';
+    if (!isAdmin && document.getElementById('sec-album')?.classList.contains('active')) switchTab('partidos');
     if (!authResolved) { authResolved = true; resolve(user); }
     else { buildFilterBar(); renderMatches(); }
   });
@@ -1798,6 +1852,7 @@ function switchTab(tab){
   if(tab==='cuadro')renderBracket();
   if(tab==='datos')refreshCsvPreview();
   if(tab==='goleadores')loadAndRenderScorers();
+  if(tab==='album')loadAlbum();
 }
 
 async function loadAndRenderScorers(){
@@ -1850,6 +1905,146 @@ async function forceSyncFromRemote(){
   setSyncStatus('loading', 'Sincronizando…');
   await loadResults();
   renderAll();
+}
+
+// ── ALBUM ────────────────────────────────────────────────────────
+const ALBUM_TEAMS = [
+  {code:'MEX',name:'México',g:'A'},{code:'RSA',name:'Sudáfrica',g:'A'},{code:'KOR',name:'Corea del Sur',g:'A'},{code:'CZE',name:'República Checa',g:'A'},
+  {code:'CAN',name:'Canadá',g:'B'},{code:'BIH',name:'Bosnia y Herz.',g:'B'},{code:'QAT',name:'Qatar',g:'B'},{code:'SUI',name:'Suiza',g:'B'},
+  {code:'BRA',name:'Brasil',g:'C'},{code:'MAR',name:'Marruecos',g:'C'},{code:'HAI',name:'Haití',g:'C'},{code:'SCO',name:'Escocia',g:'C'},
+  {code:'USA',name:'Estados Unidos',g:'D'},{code:'PAR',name:'Paraguay',g:'D'},{code:'AUS',name:'Australia',g:'D'},{code:'TUR',name:'Turquía',g:'D'},
+  {code:'GER',name:'Alemania',g:'E'},{code:'CUW',name:'Curazao',g:'E'},{code:'CIV',name:'Costa de Marfil',g:'E'},{code:'ECU',name:'Ecuador',g:'E'},
+  {code:'NED',name:'Países Bajos',g:'F'},{code:'JPN',name:'Japón',g:'F'},{code:'SWE',name:'Suecia',g:'F'},{code:'TUN',name:'Túnez',g:'F'},
+  {code:'BEL',name:'Bélgica',g:'G'},{code:'EGY',name:'Egipto',g:'G'},{code:'IRN',name:'Irán',g:'G'},{code:'NZL',name:'Nueva Zelanda',g:'G'},
+  {code:'ESP',name:'España',g:'H'},{code:'CPV',name:'Cabo Verde',g:'H'},{code:'KSA',name:'Arabia Saudita',g:'H'},{code:'URU',name:'Uruguay',g:'H'},
+  {code:'FRA',name:'Francia',g:'I'},{code:'SEN',name:'Senegal',g:'I'},{code:'IRQ',name:'Irak',g:'I'},{code:'NOR',name:'Noruega',g:'I'},
+  {code:'ARG',name:'Argentina',g:'J'},{code:'ALG',name:'Argelia',g:'J'},{code:'AUT',name:'Austria',g:'J'},{code:'JOR',name:'Jordania',g:'J'},
+  {code:'POR',name:'Portugal',g:'K'},{code:'COD',name:'RD de Congo',g:'K'},{code:'UZB',name:'Uzbekistán',g:'K'},{code:'COL',name:'Colombia',g:'K'},
+  {code:'ENG',name:'Inglaterra',g:'L'},{code:'CRO',name:'Croacia',g:'L'},{code:'GHA',name:'Ghana',g:'L'},{code:'PAN',name:'Panamá',g:'L'},
+];
+const ALBUM_GROUPS = ['A','B','C','D','E','F','G','H','I','J','K','L'];
+let albumData = {}; // key → 0(falta)/1(tengo)/2(repe)
+let albumLoaded = false;
+let albumFilter = 'all'; // 'all' | 'tengo' | 'falta' | 'repe'
+
+const pad2 = n => String(n).padStart(2, '0');
+function isSpecial(code, n) { return code === 'FWC' || n === 1 || n === 13; }
+
+async function loadAlbum() {
+  if (!isAdmin || albumLoaded) return;
+  const token = await firebaseAuth.currentUser?.getIdToken();
+  if (!token) return;
+  const res = await fetch(`${FIREBASE_URL}/album.json?auth=${token}`);
+  albumData = (await res.json()) || {};
+  albumLoaded = true;
+  renderAlbumGrid();
+  updateAlbumStats();
+}
+
+function renderAlbumGrid() {
+  const grid = document.getElementById('albumGrid');
+  if (!grid) return;
+
+  // FWC section (FWC00–FWC19, all special)
+  let html = `<div class="album-fwc" data-section="fwc">
+    <div class="album-group-hdr">⭐ FWC (Álbum / Torneo)</div>
+    <div class="album-teams"><div class="album-team" data-team="FWC">
+      <div class="stickers-grid">`;
+  for (let n = 0; n <= 19; n++) {
+    const key = 'FWC' + pad2(n);
+    const st = albumData[key] || 0;
+    const cls = st === 1 ? 's-tengo' : st === 2 ? 's-repe' : 's-falta';
+    html += `<div class="stk s-special ${cls}" data-key="${key}" onclick="clickSticker('${key}')">★${pad2(n)}</div>`;
+  }
+  html += `</div></div></div></div>`;
+
+  // Team groups (XX01–XX20; #01 and #13 are special)
+  for (const g of ALBUM_GROUPS) {
+    const teams = ALBUM_TEAMS.filter(t => t.g === g);
+    html += `<div class="album-group" data-group="${g}">
+      <div class="album-group-hdr">Grupo ${g}</div>
+      <div class="album-teams">`;
+    for (const team of teams) {
+      html += `<div class="album-team" data-team="${team.code}">
+        <div class="album-team-hdr">${flag(team.name,14)} <span class="team-code">${team.code}</span> ${team.name}</div>
+        <div class="stickers-grid">`;
+      for (let n = 1; n <= 20; n++) {
+        const key = team.code + pad2(n);
+        const st = albumData[key] || 0;
+        const cls = st === 1 ? 's-tengo' : st === 2 ? 's-repe' : 's-falta';
+        const special = isSpecial(team.code, n);
+        const label = special ? `★${pad2(n)}` : pad2(n);
+        html += `<div class="stk${special?' s-special':''} ${cls}" data-key="${key}" onclick="clickSticker('${key}')">${label}</div>`;
+      }
+      html += `</div></div>`;
+    }
+    html += `</div></div>`;
+  }
+
+  grid.innerHTML = html;
+}
+
+async function clickSticker(key) {
+  const cur = albumData[key] || 0;
+  const next = (cur + 1) % 3;
+  albumData[key] = next;
+  const el = document.querySelector(`.stk[data-key="${key}"]`);
+  if (el) {
+    el.classList.remove('s-falta','s-tengo','s-repe');
+    el.classList.add(next === 1 ? 's-tengo' : next === 2 ? 's-repe' : 's-falta');
+  }
+  updateAlbumStats();
+  applyAlbumFilter();
+  const token = await firebaseAuth.currentUser?.getIdToken();
+  if (!token) return;
+  await fetch(`${FIREBASE_URL}/album.json?auth=${token}`, {
+    method: 'PATCH',
+    headers: {'Content-Type':'application/json'},
+    body: JSON.stringify({[key]: next === 0 ? null : next}),
+  });
+}
+
+function updateAlbumStats() {
+  const vals = Object.values(albumData);
+  const tengo = vals.filter(v => v >= 1).length;
+  const repes = vals.filter(v => v === 2).length;
+  const faltas = 980 - tengo;
+  const el = document.getElementById('albumStats');
+  if (el) el.innerHTML = `✅ ${tengo} tengo &nbsp;·&nbsp; ❌ ${faltas} faltas &nbsp;·&nbsp; 🔄 ${repes} repes &nbsp;·&nbsp; ${tengo}/980`;
+}
+
+function setAlbumFilter(filter, btn) {
+  albumFilter = filter;
+  document.querySelectorAll('.alb-f').forEach(b => b.classList.toggle('active', b === btn));
+  applyAlbumFilter();
+}
+
+function applyAlbumFilter() {
+  const q = (document.getElementById('albumSearch')?.value || '').trim().toUpperCase();
+  const grid = document.getElementById('albumGrid');
+  if (!grid) return;
+
+  grid.querySelectorAll('.stk').forEach(el => {
+    const key = el.dataset.key;
+    const state = albumData[key] || 0;
+    const matchQ = !q || key.startsWith(q);
+    const matchF = albumFilter === 'all'
+      || (albumFilter === 'tengo' && state >= 1)
+      || (albumFilter === 'falta' && state === 0)
+      || (albumFilter === 'repe'  && state === 2);
+    el.style.display = (matchQ && matchF) ? '' : 'none';
+    el.style.outline = (matchQ && q && albumFilter === 'all') ? '2px solid var(--accent)' : '';
+  });
+
+  grid.querySelectorAll('.album-team').forEach(teamEl => {
+    const anyVisible = [...teamEl.querySelectorAll('.stk')].some(s => s.style.display !== 'none');
+    teamEl.classList.toggle('album-section-hidden', !anyVisible);
+  });
+
+  grid.querySelectorAll('.album-group, .album-fwc').forEach(secEl => {
+    const allHidden = [...secEl.querySelectorAll('.album-team')].every(t => t.classList.contains('album-section-hidden'));
+    secEl.classList.toggle('album-section-hidden', allHidden);
+  });
 }
 
 // ── SEED ALEATORIO (primera fase) ────────────────────
