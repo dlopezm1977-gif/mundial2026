@@ -28,6 +28,7 @@ Organizada en cuatro pestañas:
 - Estadísticas: partidos jugados, goles totales, media por partido y barra de progreso; antes del inicio muestra cuenta atrás en directo hasta el partido inaugural
 - Filtros por grupo, por fase (grupos / KO), por fecha o solo partidos en TVE
 - **Indicador de pronósticos**: cada tarjeta de partido incluye una barra de color en la parte inferior con el porcentaje de participantes de la porra que pronosticaron victoria local / empate / victoria visitante; antes del partido los colores son azul / gris / naranja; una vez jugado, el segmento acertado se pone en verde y los erróneos en rojo. Los picks se leen directamente del nodo `/porras` de Firebase (solo porras con `locked: true`); los picks se almacenan internamente como array indexado por ID de partido
+- **Modal de pronósticos**: al pulsar el marcador de cualquier partido (o la barra de picks), se abre un modal con todos los pronósticos agrupados: en partidos acabados por exacto / resultado correcto / fallo (ordenados por marcador asc dentro de cada grupo); en partidos pendientes o en curso agrupados por victoria local / empate / victoria visitante y ordenados por marcador asc (1-0, 2-0, 2-1, 3-0…). Funciona en escritorio y móvil
 
 **Clasificación**
 - Tabla por grupo calculada automáticamente con criterios de desempate (puntos, diferencia de goles, goles a favor)
@@ -82,7 +83,7 @@ Permite a cada participante crear su propia porra y competir en un leaderboard c
 - **Sub-pestaña General**: ranking completo con posición, nombre (etiqueta de grupo visible en vista Global), exactos, especiales y total; medallas 🥇🥈🥉 para el top 3; franja de color en el borde izquierdo de cada fila: verde = porra bloqueada (enviada), rojo = porra sin bloquear (pendiente de enviar)
 - **Sub-pestaña Por jornada**: tabla histórica con el top 3 de cada día jugado
 - **Sub-pestaña Evolución**: gráfica de líneas (Chart.js) con la evolución de puntos acumulados por jugador a lo largo del torneo; leyenda interactiva para ocultar/mostrar participantes
-- **Detalle de porra**: clic en cualquier participante abre un modal con los 72 partidos y los pronósticos especiales comparados con el resultado real
+- **Detalle de porra**: clic en cualquier participante abre un modal con los 72 partidos y los pronósticos especiales comparados con el resultado real; la cabecera de la tabla (PARTIDO / TU PRONÓSTICO / RESULTADO REAL / PUNTOS) es sticky y permanece visible al hacer scroll
 
 ---
 
@@ -231,12 +232,13 @@ python -m http.server 8080
 
 ## 🔧 Configuración (Firebase)
 
-Los datos se sincronizan en Firebase Realtime Database en dos nodos separados:
+Los datos se sincronizan en Firebase Realtime Database en tres nodos principales:
 
 | Nodo | URL | Contenido |
 |---|---|---|
-| `/results` | `…/results.json` | Resultados de partidos y marcas TVE manual |
+| `/results` | `…/results.json` | Resultados de partidos (marcador, flag `live`, penaltis) y marcas TVE manual |
 | `/porras` | `…/porras.json` | Porras de todos los usuarios |
+| `/scorers` | `…/scorers.json` | Tabla de goleadores sincronizada automáticamente desde football-data.org |
 
 **URL base:** `https://mundial2026-53420-default-rtdb.europe-west1.firebasedatabase.app`
 
@@ -252,13 +254,18 @@ La URL y la configuración del SDK están en el código de cada fichero HTML. La
     "porras": {
       ".read": true,
       ".write": true
+    },
+    "scorers": {
+      ".read": true,
+      ".write": "auth != null"
     }
   }
 }
 ```
 
-- `/results` — lectura pública; escritura solo para el admin autenticado (Firebase Auth)
+- `/results` — lectura pública; escritura solo para el admin autenticado (Firebase Auth) o el script de sync
 - `/porras` — lectura y escritura públicas (los usuarios guardan su porra sin login)
+- `/scorers` — lectura pública; escritura solo para el admin / script de sync
 
 El admin se gestiona desde Firebase Console → Authentication → Users, sin contraseñas hardcodeadas en el código.
 
@@ -314,9 +321,13 @@ Cuando la conexión se recupera (al pulsar **↺ Actualizar**), el estado vuelve
 {
   "1": { "home": 2, "away": 0 },
   "2": { "home": 1, "away": 1, "pen1": 4, "pen2": 3 },
+  "5": { "home": 1, "away": 0, "live": true },
   "tveMatches": { "3": true }
 }
 ```
+
+- El campo `live: true` indica que el partido está en curso (se elimina cuando termina)
+- `pen1` / `pen2` solo aparecen en partidos KO que llegan a penaltis
 
 ### Porras — nodo `/porras`
 
@@ -358,11 +369,39 @@ Cuando la conexión se recupera (al pulsar **↺ Actualizar**), el estado vuelve
 | `index.html` | Seguimiento de partidos, clasificaciones de grupo y cuadro de eliminatorias |
 | `porra2026.html` | Sistema de predicciones y leaderboard |
 | `manifest.json` | Manifiesto PWA (nombre, icono, colores, modo standalone) |
-| `sw.js` | Service worker — caché offline de los ficheros principales (`v5`); solo cachea ficheros que existen: `index.html`, `porra2026.html`, `manifest.json`, `icons/icon-192.png`, `assets/img/DAZN.png`, `assets/img/TVE.png` |
+| `sw.js` | Service worker — caché offline de los ficheros principales (versión `v19`); cachea: `index.html`, `porra2026.html`, `manifest.json`, `icons/icon-192.png`, `assets/img/DAZN.png`, `assets/img/TVE.png`; la versión se incrementa en cada deploy para forzar recarga en móvil |
+| `scripts/sync-results.js` | Script Node.js ejecutado por GitHub Actions cada 5 min; obtiene resultados de football-data.org y los escribe en Firebase; también sincroniza la tabla de goleadores (`/scorers`) |
+| `.github/workflows/sync-results.yml` | Workflow de GitHub Actions disparado externamente (cron-job.org) cada 5 min para ejecutar el script de sincronización |
 | `icons/icon-192.png` | Icono de la app (192×192 px) para launcher y apple-touch-icon |
 | `assets/img/DAZN.png` | Logo DAZN (usado en los match cards) |
 | `assets/img/TVE.png` | Logo TVE (usado en los match cards) |
 | `docs/mensajes_whatsapp.txt` | Mensajes listos para compartir la porra por WhatsApp |
+
+---
+
+## ⚙️ Sincronización automática de resultados
+
+Los resultados y goleadores se sincronizan automáticamente con **football-data.org** cada 5 minutos mientras dura el torneo (hasta el 20 de julio de 2026).
+
+### Arquitectura
+
+1. **[cron-job.org](https://cron-job.org)** dispara el endpoint `workflow_dispatch` de GitHub Actions cada 5 min (servicio externo gratuito, el cron nativo de GitHub Actions tiene granularidad mínima de 5 min y suele retrasarse)
+2. **GitHub Actions** (`.github/workflows/sync-results.yml`) ejecuta `scripts/sync-results.js` con Node.js 24
+3. El script consulta `football-data.org/v4/competitions/WC/matches` y `…/scorers`
+4. Solo escribe en Firebase si hay cambios (PATCH para resultados, PUT para goleadores)
+
+### Limitaciones de la API gratuita
+
+- football-data.org (plan gratuito): devuelve marcadores y goleadores, pero **no el desglose gol a gol** (minuto, anotador, tipo); la función `syncGoals` existe en el código pero está desactivada
+- El sync cubre solo la **fase de grupos** (partidos 1–72); los KO se sincronizan cuando football-data.org los actualice con los equipos reales
+
+### Secretos necesarios (GitHub → Settings → Secrets)
+
+| Secret | Uso |
+|---|---|
+| `FOOTBALL_DATA_TOKEN` | Token de la API de football-data.org |
+| `FIREBASE_ADMIN_EMAIL` | Email del usuario admin en Firebase Authentication |
+| `FIREBASE_ADMIN_PASSWORD` | Contraseña del usuario admin |
 
 ---
 
