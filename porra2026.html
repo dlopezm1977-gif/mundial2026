@@ -240,8 +240,9 @@
     #detailModal .modal{padding:1rem;}
     .detail-table{font-size:.68rem;}
     .detail-table th,.detail-table td{padding:.3rem .35rem;}
-    .detail-table-fixed th:first-child{width:44%;}
-    .detail-table-fixed th:nth-child(2),.detail-table-fixed th:nth-child(3){width:23%;}
+    .detail-table-fixed th:first-child{width:36%;}
+    .detail-table-fixed th:nth-child(2),.detail-table-fixed th:nth-child(3){width:24%;}
+    .detail-table-fixed th:last-child{width:16%;}
   }
   .pts-exact{color:var(--accent);font-weight:700;}
   .pts-partial{color:var(--accent2);}
@@ -870,6 +871,20 @@ function flagImg(team, sz=20) {
 
 const ROUNDS = ['Fase de Grupos','16avos de Final','Octavos de Final','Cuartos de Final','Semifinales','Final'];
 
+const TEAM_CODES = {
+  'México':'MEX','Sudáfrica':'RSA','Corea del Sur':'KOR','República Checa':'CZE',
+  'Canadá':'CAN','Bosnia y Herz.':'BIH','Bosnia y Herzegovina':'BIH','Qatar':'QAT','Suiza':'SUI',
+  'Brasil':'BRA','Marruecos':'MAR','Haití':'HAI','Escocia':'SCO',
+  'Estados Unidos':'USA','Paraguay':'PAR','Australia':'AUS','Turquía':'TUR',
+  'Alemania':'GER','Curazao':'CUW','Costa de Marfil':'CIV','Ecuador':'ECU',
+  'Países Bajos':'NED','Japón':'JPN','Suecia':'SWE','Túnez':'TUN',
+  'Bélgica':'BEL','Egipto':'EGY','Irán':'IRN','Nueva Zelanda':'NZL',
+  'España':'ESP','Cabo Verde':'CPV','Arabia Saudita':'KSA','Uruguay':'URU',
+  'Francia':'FRA','Senegal':'SEN','Irak':'IRQ','Noruega':'NOR',
+  'Argentina':'ARG','Argelia':'ALG','Austria':'AUT','Jordania':'JOR',
+  'Portugal':'POR','RD de Congo':'COD','Uzbekistán':'UZB','Colombia':'COL',
+  'Inglaterra':'ENG','Croacia':'CRO','Ghana':'GHA','Panamá':'PAN',
+};
 const CONTINENTS  = ['Europa','Asia','América','África','Oceanía'];
 const CONT_ROUNDS = ['16avos de Final','Octavos de Final','Cuartos de Final','Semifinales','Final'];
 const CONTINENT_COUNTS = {Europa:16, Asia:8, América:12, África:10, Oceanía:2};
@@ -1842,8 +1857,9 @@ function showDetail(name) {
   const champion = getWinnerOfFinal();
   const runnerup = getRunnerupOfFinal();
 
+  const mob = window.innerWidth < 480;
   let body = `<table class="detail-table detail-table-fixed">
-    <thead><tr><th>Partido</th><th>Tu pronóstico</th><th>Resultado real</th><th>Puntos</th></tr></thead><tbody>`;
+    <thead><tr><th>Partido</th><th>${mob?'Pronóst.':'Tu pronóstico'}</th><th>${mob?'Real':'Resultado real'}</th><th>${mob?'Pts':'Puntos'}</th></tr></thead><tbody>`;
 
   GROUP_MATCHES.forEach(m => {
     const real = masterData[m.id];
@@ -1868,8 +1884,10 @@ function showDetail(name) {
       }
     }
 
+    const homeLabel = mob ? (TEAM_CODES[m.home]||m.home) : m.home;
+    const awayLabel = mob ? (TEAM_CODES[m.away]||m.away) : m.away;
     body += `<tr>
-      <td>${flagImg(m.home,14)} ${m.home} vs ${flagImg(m.away,14)} ${m.away} <span style="font-size:.6rem;color:var(--muted)">(Gr.${m.group})</span></td>
+      <td>${flagImg(m.home,14)} ${homeLabel} vs ${flagImg(m.away,14)} ${awayLabel} <span style="font-size:.6rem;color:var(--muted)">(Gr.${m.group})</span></td>
       <td>${pickFilled ? pick.h+' : '+pick.a : '<span style="color:var(--muted)">—</span>'}</td>
       <td>${realPlayed ? real.home+' : '+real.away : '<span style="color:var(--muted)">pendiente</span>'}</td>
       <td class="${ptsClass}">${ptsCell}</td>
@@ -1882,7 +1900,7 @@ function showDetail(name) {
   const BIG4 = ['España','Francia','Argentina','Brasil'];
   body += `<div style="margin-top:1.5rem">
     <div style="font-family:'Bebas Neue',sans-serif;font-size:1.1rem;color:var(--accent2);margin-bottom:.75rem">Pronósticos especiales</div>
-    <table class="detail-table detail-table-fixed"><thead><tr><th>Pronóstico</th><th>Tu elección</th><th>Resultado real</th><th>Puntos</th></tr></thead><tbody>`;
+    <table class="detail-table detail-table-fixed"><thead><tr><th>${mob?'Pronóst.':'Pronóstico'}</th><th>${mob?'Elección':'Tu elección'}</th><th>${mob?'Real':'Resultado real'}</th><th>${mob?'Pts':'Puntos'}</th></tr></thead><tbody>`;
 
   // Campeón
   const champCorrect = champion && entry.champion === champion;
