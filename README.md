@@ -384,7 +384,7 @@ Cuando la conexión se recupera (al pulsar **↺ Actualizar**), el estado vuelve
 | `index.html` | Seguimiento de partidos, clasificaciones de grupo y cuadro de eliminatorias |
 | `porra2026.html` | Sistema de predicciones y leaderboard |
 | `manifest.json` | Manifiesto PWA (nombre, icono, colores, modo standalone) |
-| `sw.js` | Service worker — caché offline de los ficheros principales (versión `v20`); cachea: `index.html`, `porra2026.html`, `manifest.json`, `icons/icon-192.png`, `assets/img/DAZN.png`, `assets/img/TVE.png`; la versión se incrementa en cada deploy para forzar recarga en móvil |
+| `sw.js` | Service worker — caché offline de los ficheros principales (versión `v21`); cachea: `index.html`, `porra2026.html`, `manifest.json`, `icons/icon-192.png`, `assets/img/DAZN.png`, `assets/img/TVE.png`; la versión se incrementa en cada deploy para forzar recarga en móvil |
 | `scripts/sync-results.js` | Script Node.js ejecutado por GitHub Actions cada 5 min; obtiene resultados de football-data.org y los escribe en Firebase; también sincroniza la tabla de goleadores (`/scorers`) |
 | `.github/workflows/sync-results.yml` | Workflow de GitHub Actions disparado externamente (cron-job.org) cada 5 min para ejecutar el script de sincronización |
 | `icons/icon-192.png` | Icono de la app (192×192 px) para launcher y apple-touch-icon |
