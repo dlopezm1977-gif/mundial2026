@@ -213,7 +213,7 @@
   .modal{background:var(--surface);border:1px solid var(--border);border-radius:10px;
     padding:1.8rem;max-width:680px;width:95%;max-height:90vh;overflow-y:auto;}
   #detailModal .modal{display:flex;flex-direction:column;overflow-y:hidden;padding-bottom:0;}
-  #detailBody{overflow-y:auto;flex:1;min-height:0;padding-bottom:1.8rem;}
+  #detailBody{overflow-y:auto;overflow-x:hidden;flex:1;min-height:0;padding-bottom:1.8rem;}
   .modal h3{font-family:'Bebas Neue',sans-serif;font-size:1.5rem;color:var(--accent);
     margin-bottom:1.2rem;letter-spacing:.05em;}
   .modal-close{float:right;background:none;border:1px solid var(--border);border-radius:4px;
@@ -227,7 +227,7 @@
     border-bottom:1px solid var(--border);text-align:center;
     position:sticky;top:0;background:var(--surface);z-index:1;}
   .detail-table th:first-child{text-align:left;}
-  .detail-table td{padding:.45rem .6rem;border-bottom:1px solid rgba(31,45,74,.4);text-align:center;overflow-wrap:break-word;word-break:break-word;}
+  .detail-table td{padding:.45rem .6rem;border-bottom:1px solid rgba(31,45,74,.4);text-align:center;}
   .detail-table td:first-child{text-align:left;}
   .detail-table tr:last-child td{border-bottom:none;}
   /* Solo para tablas de 4 columnas (partidos y especiales) */
@@ -235,10 +235,11 @@
   .detail-table-fixed th:first-child{width:48%;}
   .detail-table-fixed th:nth-child(2),.detail-table-fixed th:nth-child(3){width:21%;}
   .detail-table-fixed th:last-child{width:10%;}
+  .detail-table-fixed td{overflow-wrap:break-word;word-break:break-word;}
   @media(max-width:480px){
     #detailModal .modal{padding:1rem;}
-    .detail-table{font-size:.72rem;}
-    .detail-table th,.detail-table td{padding:.35rem .4rem;}
+    .detail-table{font-size:.68rem;}
+    .detail-table th,.detail-table td{padding:.3rem .35rem;}
     .detail-table-fixed th:first-child{width:44%;}
     .detail-table-fixed th:nth-child(2),.detail-table-fixed th:nth-child(3){width:23%;}
   }
@@ -1921,10 +1922,10 @@ function showDetail(name) {
 
   // Continent predictions section
   {
-    const CONT_SHORT = {'16avos de Final':'16avos','Octavos de Final':'Octavos','Cuartos de Final':'Cuartos','Semifinales':'Semis','Final':'Final'};
+    const CONT_SHORT = {'16avos de Final':'16av','Octavos de Final':'Oct','Cuartos de Final':'Cto','Semifinales':'SF','Final':'F'};
     body += `<div style="margin-top:1.5rem">
       <div style="font-family:'Bebas Neue',sans-serif;font-size:1.1rem;color:var(--purple);margin-bottom:.75rem">🌍 Equipos por continente en cada ronda</div>
-      <div style="overflow-x:auto"><table class="detail-table" style="min-width:480px">
+      <table class="detail-table">
         <thead><tr><th>Continente</th>${CONT_ROUNDS.map(r=>`<th>${CONT_SHORT[r]}</th>`).join('')}</tr></thead>
         <tbody>`;
     CONTINENTS.forEach(cont => {
@@ -1941,7 +1942,7 @@ function showDetail(name) {
       });
       body += `</tr>`;
     });
-    body += `</tbody></table></div>
+    body += `</tbody></table>
       <p style="font-size:.62rem;color:var(--muted);margin-top:.5rem;font-family:'DM Mono',monospace">Formato: tu pronóstico / resultado real · verde = +50 pts</p>
     </div>`;
   }
