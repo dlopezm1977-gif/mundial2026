@@ -46,6 +46,15 @@ Organizada en cuatro pestañas:
 **Datos CSV**
 - Exportar/importar backup completo de resultados
 
+**Álbum** *(solo visible para admin)*
+- Tracker del álbum Panini WC2026: 980 cromos — 48 selecciones × 20 (XX01–XX20) + FWC00–FWC19
+- Click en un cromo para ciclar su estado: ❌ falta (rojo) → ✅ tengo (verde) → 🔄 repe (azul)
+- Cromos especiales (#01 y #13 de cada selección, todos los FWC) marcados con ★ y borde diferenciado
+- Buscador en tiempo real: claves con cero (`ESP01`, `FWC05`) garantizan unicidad en la búsqueda
+- Filtro por estado: **Todos / Tengo / Faltas / Repes** — combinable con el buscador
+- Datos persistidos en Firebase nodo `/album` (requiere auth de admin para leer y escribir)
+- Responsive: 1 equipo por fila en móvil con tiles de mínimo 44 px para zona de toque cómoda
+
 **General**
 - Sincronización con estado visible (cargando / sincronizado / error); fallback a localStorage sin conexión
 - Diseño responsive optimizado para móvil con breakpoints a 680 px y 480 px
@@ -83,7 +92,7 @@ Permite a cada participante crear su propia porra y competir en un leaderboard c
 - **Sub-pestaña General**: ranking completo con posición, nombre (etiqueta de grupo visible en vista Global), exactos, especiales y total; medallas 🥇🥈🥉 para el top 3; franja de color en el borde izquierdo de cada fila: verde = porra bloqueada (enviada), rojo = porra sin bloquear (pendiente de enviar)
 - **Sub-pestaña Por jornada**: tabla histórica con el top 3 de cada día jugado
 - **Sub-pestaña Evolución**: gráfica de líneas (Chart.js) con la evolución de puntos acumulados por jugador a lo largo del torneo; leyenda interactiva para ocultar/mostrar participantes
-- **Detalle de porra**: clic en cualquier participante abre un modal con los 72 partidos y los pronósticos especiales comparados con el resultado real; la cabecera de la tabla (PARTIDO / TU PRONÓSTICO / RESULTADO REAL / PUNTOS) es sticky y permanece visible al hacer scroll
+- **Detalle de porra**: clic en cualquier participante abre un modal con los 72 partidos y los pronósticos especiales comparados con el resultado real; la cabecera de la tabla (PARTIDO / TU PRONÓSTICO / RESULTADO REAL / PUNTOS) es sticky y permanece visible al hacer scroll; la tabla usa `table-layout:fixed` con proporciones de columna definidas para evitar desbordamiento lateral en móvil
 
 ---
 
@@ -239,6 +248,7 @@ Los datos se sincronizan en Firebase Realtime Database en tres nodos principales
 | `/results` | `…/results.json` | Resultados de partidos (marcador, flag `live`, penaltis) y marcas TVE manual |
 | `/porras` | `…/porras.json` | Porras de todos los usuarios |
 | `/scorers` | `…/scorers.json` | Tabla de goleadores sincronizada automáticamente desde football-data.org |
+| `/album` | `…/album.json` | Estado del álbum de cromos (solo admin): clave `ESP01`…`ESP20`, `FWC00`…`FWC19` → 0/1/2 |
 
 **URL base:** `https://mundial2026-53420-default-rtdb.europe-west1.firebasedatabase.app`
 
@@ -258,6 +268,10 @@ La URL y la configuración del SDK están en el código de cada fichero HTML. La
     "scorers": {
       ".read": true,
       ".write": "auth != null"
+    },
+    "album": {
+      ".read": "auth != null",
+      ".write": "auth != null"
     }
   }
 }
@@ -266,6 +280,7 @@ La URL y la configuración del SDK están en el código de cada fichero HTML. La
 - `/results` — lectura pública; escritura solo para el admin autenticado (Firebase Auth) o el script de sync
 - `/porras` — lectura y escritura públicas (los usuarios guardan su porra sin login)
 - `/scorers` — lectura pública; escritura solo para el admin / script de sync
+- `/album` — lectura y escritura solo para el admin (datos privados del tracker de cromos)
 
 El admin se gestiona desde Firebase Console → Authentication → Users, sin contraseñas hardcodeadas en el código.
 
@@ -369,7 +384,7 @@ Cuando la conexión se recupera (al pulsar **↺ Actualizar**), el estado vuelve
 | `index.html` | Seguimiento de partidos, clasificaciones de grupo y cuadro de eliminatorias |
 | `porra2026.html` | Sistema de predicciones y leaderboard |
 | `manifest.json` | Manifiesto PWA (nombre, icono, colores, modo standalone) |
-| `sw.js` | Service worker — caché offline de los ficheros principales (versión `v19`); cachea: `index.html`, `porra2026.html`, `manifest.json`, `icons/icon-192.png`, `assets/img/DAZN.png`, `assets/img/TVE.png`; la versión se incrementa en cada deploy para forzar recarga en móvil |
+| `sw.js` | Service worker — caché offline de los ficheros principales (versión `v20`); cachea: `index.html`, `porra2026.html`, `manifest.json`, `icons/icon-192.png`, `assets/img/DAZN.png`, `assets/img/TVE.png`; la versión se incrementa en cada deploy para forzar recarga en móvil |
 | `scripts/sync-results.js` | Script Node.js ejecutado por GitHub Actions cada 5 min; obtiene resultados de football-data.org y los escribe en Firebase; también sincroniza la tabla de goleadores (`/scorers`) |
 | `.github/workflows/sync-results.yml` | Workflow de GitHub Actions disparado externamente (cron-job.org) cada 5 min para ejecutar el script de sincronización |
 | `icons/icon-192.png` | Icono de la app (192×192 px) para launcher y apple-touch-icon |
