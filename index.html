@@ -314,6 +314,8 @@
   .bk-team.out{opacity:.42;}
   .bk-tname{flex:1;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;min-width:0;}
   .bk-tname.ph{color:var(--muted);font-style:italic;font-size:.6rem;}
+  .bk-tname.prov{color:var(--muted);font-style:italic;}
+  .bk-card.prov-card{border-style:dashed;}
   .bk-tscore{font-family:'Bebas Neue',sans-serif;font-size:.92rem;color:var(--muted);
     min-width:14px;text-align:right;flex-shrink:0;}
   .bk-tscore.win{color:var(--green);}
@@ -1105,11 +1107,15 @@ function resolveSlot(slot, st, cache) {
 
   let res;
   if (slot.type === 'group') {
+    const sorted = sortGroup(slot.group, st);
+    const lbl = `${['','1º','2º','3º','4º'][slot.pos]} Gr.${slot.group}`;
     if (groupComplete(slot.group)) {
-      const sorted = sortGroup(slot.group, st);
-      res = { name: sorted[slot.pos-1]?.name || null, label: `${['','1º','2º','3º','4º'][slot.pos]} Gr.${slot.group}` };
+      res = { name: sorted[slot.pos-1]?.name || null, label: lbl };
     } else {
-      res = { name: null, label: `${['','1º','2º','3º','4º'][slot.pos]} Gr.${slot.group}` };
+      const hasData = Object.values(st[slot.group]).some(t => t.pj > 0);
+      res = (hasData && sorted[slot.pos-1])
+        ? { name: sorted[slot.pos-1].name, label: lbl, provisional: true }
+        : { name: null, label: lbl };
     }
   } else if (slot.type === 'third') {
     if (allGroupsDone()) {
@@ -1763,7 +1769,7 @@ function renderBracket() {
   function bkTeamRow(resolved, score, isWin, isOut) {
     const f = resolved.name ? flag(resolved.name, 15) : '';
     const nm = resolved.name
-      ? `<span class="bk-tname">${resolved.name}</span>`
+      ? `<span class="bk-tname${resolved.provisional?' prov':''}">${resolved.name}${resolved.provisional?'*':''}</span>`
       : `<span class="bk-tname ph">${resolved.label || '?'}</span>`;
     const sc = score !== '' && score !== undefined
       ? `<span class="bk-tscore${isWin?' win':''}">${score}</span>`
@@ -1787,8 +1793,9 @@ function renderBracket() {
     }
     const hWin = winner && winner === hR.name;
     const aWin = winner && winner === aR.name;
-    const canClick = isAdmin && hR.name && aR.name;
-    return `<div class="bk-card${played?' played':''}${canClick?' clickable':''}"
+    const isProvisional = !played && (hR.provisional || aR.provisional);
+    const canClick = isAdmin && hR.name && aR.name && !hR.provisional && !aR.provisional;
+    return `<div class="bk-card${played?' played':''}${isProvisional?' prov-card':''}${canClick?' clickable':''}"
         ${canClick?`onclick="openScoreModal(${m.id})"`:''}>${bkTeamRow(hR,hScore,hWin,played&&!hWin&&winner)}${bkTeamRow(aR,aScore,aWin,played&&!aWin&&winner)}</div>`;
   }
 
@@ -1814,6 +1821,9 @@ function renderBracket() {
     html += `<div class="bk-champ-box"><div class="bk-champ-icon" style="opacity:.25">🏆</div><div class="bk-champ-tbd">Por determinar</div></div>`;
   }
   html += `</div></div></div></div>`; // .bk-champ-body .bk-champ-col .bracket .bracket-outer
+  if (!allGroupsDone()) {
+    html += `<p style="font-size:.62rem;color:var(--muted);font-style:italic;margin:.5rem 0 .2rem;padding:0 .25rem">* Provisional — clasificación no definitiva, queda Jornada 3 por jugar</p>`;
+  }
 
   // Partido por el 3er puesto
   const tm = ALL_BY_ID[103];
