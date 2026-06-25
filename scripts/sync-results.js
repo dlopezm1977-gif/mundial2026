@@ -113,7 +113,7 @@ const GROUP_MATCHES = [
   {id:49, home:'Suiza',            away:'Canadá'},
   {id:50, home:'Bosnia y Herzegovina', away:'Qatar'},
   {id:51, home:'Marruecos',        away:'Haití'},
-  {id:52, home:'Brasil',           away:'Escocia'},
+  {id:52, home:'Escocia',          away:'Brasil'},
   {id:53, home:'Sudáfrica',        away:'Corea del Sur'},
   {id:54, home:'República Checa',  away:'México'},
   {id:55, home:'Curazao',          away:'Costa de Marfil'},
