@@ -139,6 +139,10 @@ const GROUP_MATCHES = [
 // Reverse map: English name → Spanish name (for flag function in the app)
 const EN_TO_ES = Object.fromEntries(Object.entries(TEAM_MAP).map(([es, en]) => [en, es]));
 
+// Matches where football-data.org has home/away swapped vs our app definition.
+// Scores are flipped before writing to Firebase so they match our local home team.
+const SWAPPED_IDS = new Set([52]);
+
 // Build lookup: "HomeEN|AwayEN" → local match id
 const lookup = new Map();
 for (const m of GROUP_MATCHES) {
@@ -207,7 +211,8 @@ async function main() {
       continue;
     }
     const isLive = m.status === 'IN_PLAY' || m.status === 'PAUSED';
-    candidates[localId] = { home: String(score.home), away: String(score.away), live: isLive };
+    const flip = SWAPPED_IDS.has(localId);
+    candidates[localId] = { home: String(flip ? score.away : score.home), away: String(flip ? score.home : score.away), live: isLive };
     apiIdByLocalId[localId] = m.id;
     statusByLocalId[localId] = m.status;
   }
