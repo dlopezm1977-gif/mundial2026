@@ -1477,36 +1477,26 @@ const KO_PHASE_MAP = {
   '16avos de Final': [73,74,75,76,77,78,79,80,81,82,83,84,85,86,87,88],
   'Octavos de Final': [89,90,91,92,93,94,95,96],
   'Cuartos de Final': [97,98,99,100],
-  'Semifinales': [101,102],
-  'Final': [103,104]
+  'Semifinales': [101,102,103],
+  'Final': [104]
 };
 
 // Para calcular qué ronda alcanzó un equipo, necesitamos saber en qué partidos jugó
 // Usamos los picks del maestro y los resultados para rastrear
 // Función simplificada: determina si un equipo aparece como ganador de algún partido de KO
 function getTeamRound(team) {
-  // Comprobar si llegó a la final (partido 104 o 103)
-  // Comprobar si jugó en semis (101,102), cuartos (97-100), octavos (89-96), 16avos (73-88)
-  // Como no tenemos la resolución de slots aquí, usamos una aproximación:
-  // buscamos en cada ronda si hay algún partido jugado donde el equipo haya ganado o perdido
-  // Para eso necesitamos rastrear quién jugó cada partido KO
+  // Only evaluate once the Final (match 104) has a result — predictions score only after the tournament ends
+  const cache = buildKOParticipants();
+  const finalMatch = cache[104];
+  if (!finalMatch || !finalMatch.result) return null;
 
-  // Rondas en orden inverso — la más alta alcanzada
   const roundOrder = ['Final','Semifinales','Cuartos de Final','Octavos de Final','16avos de Final','Fase de Grupos'];
-
-  // Construir mapa de participantes por partido KO a partir del maestro
-  // (simplificado: miramos si el equipo aparece mencionado en picks de grupos y KO)
-  // Para la porra, si no hay datos KO suficientes devolvemos la última conocida
-
   for (const round of roundOrder) {
     if (round === 'Fase de Grupos') return 'Fase de Grupos';
     const ids = KO_PHASE_MAP[round] || [];
     for (const id of ids) {
       const r = masterData[id];
       if (!r || r.home === undefined) continue;
-      // Buscamos si el equipo jugó este partido — necesitamos resolución de slots
-      // Sin la resolución completa, comparamos con los equipos conocidos del partido
-      // Usamos los participantes inferidos del partido maestro
       if (masterMatchInvolves(id, team)) {
         return round;
       }
@@ -1761,9 +1751,7 @@ function scorePlayer(entry) {
     const picked = entry.big4?.[team];
     if (!picked) return;
     const actual = getTeamRound(team);
-    const roundKnown = actual !== 'Fase de Grupos' || GROUP_MATCHES.filter(m => m.home === team || m.away === team).every(m => {
-      const r = masterData[m.id]; return r && r.home !== undefined && r.home !== '';
-    });
+    const roundKnown = actual !== null;
     if (roundKnown && picked === actual) pts += 100;
   });
 
@@ -1924,9 +1912,7 @@ function showDetail(name) {
   BIG4.forEach(team => {
     const picked = entry.big4?.[team] || '—';
     const actual = getTeamRound(team);
-    const roundKnown = actual !== 'Fase de Grupos' || GROUP_MATCHES.filter(m=>m.home===team||m.away===team).every(m=>{
-      const r=masterData[m.id]; return r&&r.home!==undefined&&r.home!=='';
-    });
+    const roundKnown = actual !== null;
     const correct = roundKnown && picked === actual;
     body += `<tr>
       <td>🌟 Ronda ${flagImg(team,14)} ${team}</td>
@@ -1975,6 +1961,14 @@ function closeDetail() { document.getElementById('detailModal').classList.remove
 // DAILY LEADERS & EVOLUTION CHART
 // ══════════════════════════════════════════════════════
 
+const KO_ROUND_LABELS = {
+  '16avos de Final': '16avos',
+  'Octavos de Final': 'Octavos',
+  'Cuartos de Final': 'Cuartos',
+  'Semifinales':      'Semis',
+  'Final':            'Final'
+};
+
 const CHART_COLORS = [
   '#e8c84a','#3b82f6','#22c55e','#a855f7','#ef4444',
   '#f97316','#06b6d4','#ec4899','#84cc16','#f59e0b'
@@ -2011,6 +2005,33 @@ function getDatesWithResults() {
   );
 }
 
+function isKORoundActive(round) {
+  return (KO_PHASE_MAP[round] || []).some(id => {
+    const r = masterData[id];
+    return r && r.home !== undefined && r.home !== '';
+  });
+}
+
+function getKORoundLeaders() {
+  const players = getPlayersFiltered();
+  const results = [];
+  CONT_ROUNDS.forEach(round => {
+    if (!isKORoundActive(round)) return; // activates when first match of the round is played
+    const actual = getRoundTeamCountByContinent(round);
+    if (!actual) return; // continent counts not resolvable yet (edge case)
+    const scores = players.map(([key, entry]) => {
+      let pts = 0;
+      CONTINENTS.forEach(cont => {
+        const picked = entry.continentPicks?.[cont]?.[round];
+        if (picked !== undefined && picked !== '' && +picked === actual[cont]) pts += 50;
+      });
+      return { key, name: entry.displayName || key, pts };
+    }).sort((a, b) => b.pts - a.pts);
+    results.push({ round, top3: scores.slice(0, 3) });
+  });
+  return results;
+}
+
 function getDailyLeaders() {
   const byDate = getMatchesByDate();
   const datesWithResults = getDatesWithResults();
@@ -2040,6 +2061,29 @@ const hiddenDatasets = new Set();
 
 function renderDailyBanner() {
   const container = document.getElementById('dailyBannerContainer');
+
+  // Once KO rounds are available, show the most recent KO king
+  const koLeaders = getKORoundLeaders();
+  if (koLeaders.length > 0) {
+    const latest = koLeaders[koLeaders.length - 1];
+    const leader = latest.top3[0];
+    const label = KO_ROUND_LABELS[latest.round] || latest.round;
+    container.innerHTML = `
+      <div class="daily-banner" style="margin-bottom:1.25rem">
+        <div class="daily-banner-crown">👑</div>
+        <div class="daily-banner-info">
+          <div class="daily-banner-title">Rey de ${label}</div>
+          <div class="daily-banner-name">${leader.name}</div>
+        </div>
+        <div style="text-align:right">
+          <div class="daily-banner-pts">${leader.pts}</div>
+          <div class="daily-banner-ptslbl">pts esa ronda</div>
+        </div>
+      </div>`;
+    return;
+  }
+
+  // Group stage: show the last day with results
   const dailyLeaders = getDailyLeaders();
   if (dailyLeaders.length === 0) { container.innerHTML = ''; return; }
   const latest = dailyLeaders[dailyLeaders.length - 1];
@@ -2061,8 +2105,9 @@ function renderDailyBanner() {
 function renderDailySection() {
   const container = document.getElementById('dailySection');
   const dailyLeaders = getDailyLeaders();
+  const koLeaders = getKORoundLeaders();
 
-  if (dailyLeaders.length === 0) {
+  if (dailyLeaders.length === 0 && koLeaders.length === 0) {
     container.innerHTML = `<p style="color:var(--muted);font-size:.85rem;padding:2rem 0">Aún no hay jornadas con resultados.</p>`;
     return;
   }
@@ -2072,9 +2117,26 @@ function renderDailySection() {
   let html = `
     <div class="daily-table-wrap">
       <table class="daily-table">
-        <thead><tr><th>Fecha</th><th>Top 3 del día</th></tr></thead>
+        <thead><tr><th>Jornada</th><th>Top 3</th></tr></thead>
         <tbody>`;
 
+  // KO rounds at the top (most recent first)
+  [...koLeaders].reverse().forEach(({round, top3}) => {
+    const label = KO_ROUND_LABELS[round] || round;
+    html += `<tr>
+      <td><div class="daily-date" style="color:var(--accent2);font-weight:600">👑 ${label}</div></td>
+      <td><div class="daily-podium">`;
+    top3.forEach((e, i) => {
+      html += `<div class="daily-entry">
+        <span class="daily-medal">${medals[i]}</span>
+        <span class="daily-ename">${e.name}</span>
+        <span class="daily-epts">${e.pts} pts</span>
+      </div>`;
+    });
+    html += `</div></td></tr>`;
+  });
+
+  // Group stage days below (most recent first)
   [...dailyLeaders].reverse().forEach(({date, top3}) => {
     html += `<tr>
       <td><div class="daily-date">${fmtDateLong(date)}</div></td>

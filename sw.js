@@ -1,4 +1,4 @@
-const CACHE = 'mundial2026-v27';
+const CACHE = 'mundial2026-v29';
 const CORE = [
   './',
   './index.html',

@@ -87,10 +87,10 @@ Permite a cada participante crear su propia porra y competir en un leaderboard c
 
 **Pestaña Clasificación:**
 
-- **Banner "Rey del día"**: siempre visible en la cabecera, muestra quién sumó más puntos en la última jornada con resultados (respeta el filtro de grupo activo)
+- **Banner "Rey del día / Rey de ronda"**: siempre visible en la cabecera. Durante la fase de grupos muestra quién sumó más puntos en la última jornada con resultados. En cuanto empieza una ronda eliminatoria (primer partido jugado), el banner pasa a mostrar el "Rey de 16avos / Octavos / Cuartos / Semis / Final" — calculado sobre las predicciones de continentes de esa ronda (respeta el filtro de grupo activo)
 - **Filtro de grupo**: botones 🌐 Global + uno por cada grupo creado; al activar un grupo, el ranking, el histórico de jornadas y la gráfica de evolución se filtran a ese grupo
 - **Sub-pestaña General**: ranking completo con posición, nombre (etiqueta de grupo visible en vista Global), exactos, especiales y total; medallas 🥇🥈🥉 para el top 3; franja de color en el borde izquierdo de cada fila: verde = porra bloqueada (enviada), rojo = porra sin bloquear (pendiente de enviar)
-- **Sub-pestaña Por jornada**: tabla histórica con el top 3 de cada día jugado
+- **Sub-pestaña Por jornada**: tabla histórica con el top 3 de cada día (fase de grupos) y de cada ronda eliminatoria. Las rondas KO aparecen en la parte superior de la tabla (más recientes) y se activan en cuanto se juega el primer partido de esa ronda. El rey de cada ronda KO se determina por los puntos obtenidos en las predicciones de continentes de esa ronda (50 pts × 5 continentes = 250 pts máx por ronda)
 - **Sub-pestaña Evolución**: gráfica de líneas (Chart.js) con la evolución de puntos acumulados por jugador a lo largo del torneo; leyenda interactiva para ocultar/mostrar participantes
 - **Detalle de porra**: clic en cualquier participante abre un modal con los 72 partidos y los pronósticos especiales comparados con el resultado real; la cabecera de la tabla (PARTIDO / TU PRONÓSTICO / RESULTADO REAL / PUNTOS) es sticky y permanece visible al hacer scroll; la tabla usa `table-layout:fixed` con proporciones de columna definidas para evitar desbordamiento lateral en móvil
 
@@ -112,7 +112,7 @@ Permite a cada participante crear su propia porra y competir en un leaderboard c
 |---|---|
 | Campeón correcto | 200 |
 | Subcampeón correcto | 150 |
-| Ronda máxima correcta (por cada equipo del Big 4) | 100 |
+| Ronda máxima correcta (por cada equipo del Big 4) — se evalúa solo tras la Final | 100 |
 
 ### Predicción de continentes
 
@@ -384,7 +384,7 @@ Cuando la conexión se recupera (al pulsar **↺ Actualizar**), el estado vuelve
 | `index.html` | Seguimiento de partidos, clasificaciones de grupo y cuadro de eliminatorias |
 | `porra2026.html` | Sistema de predicciones y leaderboard |
 | `manifest.json` | Manifiesto PWA (nombre, icono, colores, modo standalone) |
-| `sw.js` | Service worker — caché offline de los ficheros principales (versión `v21`); cachea: `index.html`, `porra2026.html`, `manifest.json`, `icons/icon-192.png`, `assets/img/DAZN.png`, `assets/img/TVE.png`; la versión se incrementa en cada deploy para forzar recarga en móvil |
+| `sw.js` | Service worker — caché offline de los ficheros principales (versión `v29`); cachea: `index.html`, `porra2026.html`, `manifest.json`, `icons/icon-192.png`, `assets/img/DAZN.png`, `assets/img/TVE.png`; la versión se incrementa en cada deploy para forzar recarga en móvil |
 | `scripts/sync-results.js` | Script Node.js ejecutado por GitHub Actions cada 5 min; obtiene resultados de football-data.org y los escribe en Firebase; también sincroniza la tabla de goleadores (`/scorers`) |
 | `.github/workflows/sync-results.yml` | Workflow de GitHub Actions disparado externamente (cron-job.org) cada 5 min para ejecutar el script de sincronización |
 | `icons/icon-192.png` | Icono de la app (192×192 px) para launcher y apple-touch-icon |
