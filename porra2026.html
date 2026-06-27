@@ -1622,6 +1622,8 @@ function buildKOParticipants() {
       .slice(0, 8);
   }
 
+  const assignedThirds = new Set(); // deduplicate: each best-third goes to exactly one slot
+
   function resolveTeam(slot) {
     if (slot.t === 'g') {
       if (!isGroupComplete(slot.g)) return null;
@@ -1631,8 +1633,10 @@ function buildKOParticipants() {
     if (slot.t === 'th') {
       if (!allGroupsComplete()) return null;
       const best = getBestThirds();
-      const eligible = best.filter(t => slot.pools.includes(t.group));
-      return eligible[0]?.name || null;
+      const eligible = best.filter(t => slot.pools.includes(t.group) && !assignedThirds.has(t.name));
+      const team = eligible[0]?.name || null;
+      if (team) assignedThirds.add(team);
+      return team;
     }
     if (slot.t === 'w' || slot.t === 'l') {
       const ref = koParticipantsCache[slot.mid];
