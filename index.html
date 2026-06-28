@@ -844,7 +844,6 @@ const KICKOFF = new Date('2026-06-11T19:00:00Z'); // partido inaugural: 21:00 ho
 
 // ── STATE ─────────────────────────────────────────────
 let results = {};
-let koTeams = {};
 let countdownInterval = null;
 let activeFilter = 'ALL';
 let activeDateFilter = null;
@@ -967,14 +966,10 @@ async function loadPorraStats() {
 async function loadResults() {
   setSyncStatus('loading');
   try {
-    const [res, koRes] = await Promise.all([
-      fetch(FIREBASE_URL + '/results.json'),
-      fetch(FIREBASE_URL + '/koTeams.json'),
-    ]);
+    const res = await fetch(FIREBASE_URL + '/results.json');
     if (!res.ok) throw new Error(res.status);
     const data = await res.json();
     results = data || {};
-    koTeams = (koRes.ok ? await koRes.json() : null) || {};
     favoriteMatches = results.favoriteMatches || JSON.parse(localStorage.getItem('mundial2026_favorites') || '{}');
     tveMatches = results.tveMatches || JSON.parse(localStorage.getItem('mundial2026_tve') || '{}');
     setSyncStatus('ok');
@@ -1138,10 +1133,10 @@ function resolveSlot(slot, st, cache) {
     if (isPlayed(slot.mid)) {
       const r = results[slot.mid];
       const refM = ALL_BY_ID[slot.mid];
-      const kT = koTeams[slot.mid];
+      const refR = results[slot.mid];
       // Recursively resolve who was home/away in that match
-      const hR = kT?.ht ? {name:kT.ht} : (refM.home ? {name:refM.home} : resolveSlot(refM.hs, st, cache));
-      const aR = kT?.at ? {name:kT.at} : (refM.away ? {name:refM.away} : resolveSlot(refM.as, st, cache));
+      const hR = refR?.ht ? {name:refR.ht} : (refM.home ? {name:refM.home} : resolveSlot(refM.hs, st, cache));
+      const aR = refR?.at ? {name:refR.at} : (refM.away ? {name:refM.away} : resolveSlot(refM.as, st, cache));
       const hName = hR.name, aName = aR.name;
       if (hName && aName) {
         let winner=null, loser=null;
@@ -1752,8 +1747,8 @@ const BRACKET_ROUNDS = [
 
 function resolveMatchTeams(m, st, cache) {
   if (m.home !== undefined) return { hR:{name:m.home}, aR:{name:m.away} };
-  const kT = koTeams[m.id];
-  if (kT?.ht && kT?.at) return { hR:{name:kT.ht}, aR:{name:kT.at} };
+  const r = results[m.id];
+  if (r?.ht && r?.at) return { hR:{name:r.ht}, aR:{name:r.at} };
   return { hR: resolveSlot(m.hs, st, cache), aR: resolveSlot(m.as, st, cache) };
 }
 

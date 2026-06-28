@@ -271,9 +271,11 @@ async function main() {
       const awayES = awayEN ? (EN_TO_ES[awayEN] || awayEN) : null;
       if (homeES && awayES) {
         koTeamCandidates[koLocalId] = { ht: homeES, at: awayES };
-      } else if (utcKey) {
-        console.warn(`KO match ${koLocalId} (${utcKey}): unknown teams homeEN=${homeEN} awayEN=${awayEN}`);
+      } else if (homeEN || awayEN) {
+        // One team known but failed to map — actual mapping problem
+        console.warn(`KO match ${koLocalId} (${utcKey}): team mapping failed homeEN=${homeEN} awayEN=${awayEN}`);
       }
+      // both null → teams not yet determined, skip silently
       continue;
     }
 
@@ -295,15 +297,11 @@ async function main() {
   // 3. Authenticate with Firebase
   const token = await getFirebaseToken();
 
-  // 4. Fetch current Firebase results and koTeams to detect changes
-  const [currentRes, currentKoRes] = await Promise.all([
-    fetch(`${FIREBASE_DB_URL}/results.json?auth=${token}`),
-    fetch(`${FIREBASE_DB_URL}/koTeams.json?auth=${token}`),
-  ]);
-  const current   = (await currentRes.json())   || {};
-  const currentKo = (await currentKoRes.json()) || {};
+  // 4. Fetch current Firebase results to detect changes
+  const currentRes = await fetch(`${FIREBASE_DB_URL}/results.json?auth=${token}`);
+  const current = (await currentRes.json()) || {};
 
-  // 5. Keep only results that differ from what Firebase already has
+  // 5. Keep only score results that differ
   const updates = {};
   for (const [id, score] of Object.entries(candidates)) {
     const prev = current[id];
@@ -312,20 +310,25 @@ async function main() {
     }
   }
 
-  // 5b. Keep only KO team assignments that differ
-  const koUpdates = {};
+  // 5b. Keep only KO team assignments that differ (stored in /results via multi-path PATCH)
+  // Using "id/ht" keys tells Firebase to merge into existing score objects without overwriting them.
+  const koMultiPath = {};
   for (const [id, teams] of Object.entries(koTeamCandidates)) {
-    const prev = currentKo[id];
+    const prev = current[id];
     if (!prev || prev.ht !== teams.ht || prev.at !== teams.at) {
-      koUpdates[id] = teams;
+      koMultiPath[`${id}/ht`] = teams.ht;
+      koMultiPath[`${id}/at`] = teams.at;
     }
   }
 
-  if (Object.keys(updates).length === 0 && Object.keys(koUpdates).length === 0) {
+  const hasScoreUpdates = Object.keys(updates).length > 0;
+  const hasKoUpdates    = Object.keys(koMultiPath).length > 0;
+
+  if (!hasScoreUpdates && !hasKoUpdates) {
     console.log('Results already up to date');
   } else {
-    // 6. PATCH only the changed entries (leaves other results untouched)
-    if (Object.keys(updates).length > 0) {
+    // 6. PATCH only changed entries (leaves other results untouched)
+    if (hasScoreUpdates) {
       const patchRes = await fetch(`${FIREBASE_DB_URL}/results.json?auth=${token}`, {
         method: 'PATCH',
         headers: { 'Content-Type': 'application/json' },
@@ -334,14 +337,16 @@ async function main() {
       if (!patchRes.ok) throw new Error(`Firebase PATCH failed: ${patchRes.status}`);
       console.log(`Updated ${Object.keys(updates).length} result(s):`, updates);
     }
-    if (Object.keys(koUpdates).length > 0) {
-      const koPatchRes = await fetch(`${FIREBASE_DB_URL}/koTeams.json?auth=${token}`, {
+    if (hasKoUpdates) {
+      // Multi-path PATCH: keys like "74/ht" merge into results/74 without overwriting scores
+      const koPatchRes = await fetch(`${FIREBASE_DB_URL}/results.json?auth=${token}`, {
         method: 'PATCH',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(koUpdates),
+        body: JSON.stringify(koMultiPath),
       });
-      if (!koPatchRes.ok) throw new Error(`Firebase koTeams PATCH failed: ${koPatchRes.status}`);
-      console.log(`Updated ${Object.keys(koUpdates).length} KO team assignment(s):`, koUpdates);
+      if (!koPatchRes.ok) throw new Error(`Firebase KO teams PATCH failed: ${koPatchRes.status}`);
+      const ids = [...new Set(Object.keys(koMultiPath).map(k => k.split('/')[0]))];
+      console.log(`Updated KO team names for match(es) ${ids.join(',')}:`, koMultiPath);
     }
   }
 

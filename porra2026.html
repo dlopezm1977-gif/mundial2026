@@ -797,10 +797,9 @@ firebase.initializeApp({
   appId: "1:295447704159:web:8022751b11647a6122a1ea"
 });
 const firebaseAuth = firebase.auth();
-const FIREBASE_URL    = 'https://mundial2026-53420-default-rtdb.europe-west1.firebasedatabase.app';
-const PORRA_URL       = FIREBASE_URL + '/porras';
-const MASTER_URL      = FIREBASE_URL + '/results';
-const KO_TEAMS_URL    = FIREBASE_URL + '/koTeams';
+const FIREBASE_URL = 'https://mundial2026-53420-default-rtdb.europe-west1.firebasedatabase.app';
+const PORRA_URL    = FIREBASE_URL + '/porras';
+const MASTER_URL   = FIREBASE_URL + '/results';
 
 // ── BANNER CONFIG ─────────────────────────────────────
 // visible: true/false  |  type: 'info' | 'warning' | 'error' | 'success'
@@ -985,7 +984,6 @@ const GROUP_MATCHES = [
 // ══════════════════════════════════════════════════════
 let porrasData  = {};   // { "nombre": { picks:{id:{h,a}}, champion, runnerup, big4:{España,Francia,Argentina,Brasil}, locked:true } }
 let masterData  = {};   // resultados reales del maestro
-let koTeamsData = {};   // KO bracket team assignments synced from API: {id: {ht, at}}
 let currentPlayer = null;
 let activeGroupFilter = 'ALL';
 
@@ -1025,7 +1023,7 @@ async function putBin(url, data) {
 async function loadAll() {
   setSyncStatus('loading');
   try {
-    [porrasData, masterData, koTeamsData] = await Promise.all([fetchBin(PORRA_URL), fetchBin(MASTER_URL), fetchBin(KO_TEAMS_URL)]);
+    [porrasData, masterData] = await Promise.all([fetchBin(PORRA_URL), fetchBin(MASTER_URL)]);
     setSyncStatus('ok');
     if (BANNER_CONFIG.visible && BANNER_CONFIG.message) showBanner(BANNER_CONFIG.type, BANNER_CONFIG.message, BANNER_CONFIG.dismissible, BANNER_CONFIG.ticker);
     else hideBanner();
@@ -1659,10 +1657,9 @@ function buildKOParticipants() {
   }
 
   KO_DEFS.forEach(def => {
-    const r  = masterData[def.id];
-    const kT = koTeamsData[def.id];
-    const home = kT?.ht ? kT.ht : resolveTeam(def.hs);
-    const away = kT?.at ? kT.at : resolveTeam(def.as);
+    const r    = masterData[def.id];
+    const home = r?.ht ? r.ht : resolveTeam(def.hs);
+    const away = r?.at ? r.at : resolveTeam(def.as);
     koParticipantsCache[def.id] = { home, away, result: r || null };
   });
 

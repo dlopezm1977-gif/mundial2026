@@ -245,8 +245,7 @@ Los datos se sincronizan en Firebase Realtime Database en tres nodos principales
 
 | Nodo | URL | Contenido |
 |---|---|---|
-| `/results` | `…/results.json` | Resultados de partidos (marcador, flag `live`, penaltis) y marcas TVE manual |
-| `/koTeams` | `…/koTeams.json` | Equipos de cada partido KO sincronizados desde la API: `{id: {ht: "España", at: "Alemania"}}` |
+| `/results` | `…/results.json` | Resultados de partidos (marcador, flag `live`, penaltis), marcas TVE manual, y nombres de equipo KO (`ht`/`at` en partidos 73–104) |
 | `/porras` | `…/porras.json` | Porras de todos los usuarios |
 | `/scorers` | `…/scorers.json` | Tabla de goleadores sincronizada automáticamente desde football-data.org |
 | `/album` | `…/album.json` | Estado del álbum de cromos (solo admin): clave `ESP01`…`ESP20`, `FWC00`…`FWC19` → 0/1/2 |
@@ -259,10 +258,6 @@ La URL y la configuración del SDK están en el código de cada fichero HTML. La
 {
   "rules": {
     "results": {
-      ".read": true,
-      ".write": "auth != null"
-    },
-    "koTeams": {
       ".read": true,
       ".write": "auth != null"
     },
@@ -283,7 +278,6 @@ La URL y la configuración del SDK están en el código de cada fichero HTML. La
 ```
 
 - `/results` — lectura pública; escritura solo para el admin autenticado (Firebase Auth) o el script de sync
-- `/koTeams` — lectura pública; escritura solo para el script de sync (equipos de partidos KO)
 - `/porras` — lectura y escritura públicas (los usuarios guardan su porra sin login)
 - `/scorers` — lectura pública; escritura solo para el admin / script de sync
 - `/album` — lectura y escritura solo para el admin (datos privados del tracker de cromos)
@@ -343,12 +337,14 @@ Cuando la conexión se recupera (al pulsar **↺ Actualizar**), el estado vuelve
   "1": { "home": 2, "away": 0 },
   "2": { "home": 1, "away": 1, "pen1": 4, "pen2": 3 },
   "5": { "home": 1, "away": 0, "live": true },
+  "74": { "ht": "España", "at": "Alemania" },
   "tveMatches": { "3": true }
 }
 ```
 
 - El campo `live: true` indica que el partido está en curso (se elimina cuando termina)
 - `pen1` / `pen2` solo aparecen en partidos KO que llegan a penaltis
+- `ht` / `at` se añaden a los partidos KO (73–104) con los nombres de equipo reales sincronizados desde la API
 
 ### Porras — nodo `/porras`
 
