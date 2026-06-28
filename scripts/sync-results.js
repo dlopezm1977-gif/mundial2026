@@ -143,8 +143,13 @@ const EN_TO_ES = Object.fromEntries(Object.entries(TEAM_MAP).map(([es, en]) => [
 // Scores are flipped before writing to Firebase so they match our local home team.
 const SWAPPED_IDS = new Set([52]);
 
+// 16avos matches whose away slot is a best-third (type:'th').
+// The football-data.org API uses greedy assignment (wrong vs FIFA Annex C),
+// so we skip writing ht/at for these — the app computes them via Annex C.
+const THIRD_SLOT_MATCH_IDS = new Set([74, 77, 79, 80, 81, 82, 85, 87]);
+
 // KO match UTC datetimes → local IDs (venue local time converted to UTC)
-// Used to sync team name assignments from the API to Firebase /koTeams
+// Used to sync team names (non-third slots) and scores for KO matches
 const KO_UTC_LOOKUP = {
   // 16avos de Final
   '2026-06-28T22:00:00Z': 73,  // Los Ángeles PDT-7  15:00
@@ -269,13 +274,21 @@ async function main() {
     if (koLocalId) {
       const homeES = homeEN ? (EN_TO_ES[homeEN] || homeEN) : null;
       const awayES = awayEN ? (EN_TO_ES[awayEN] || awayEN) : null;
-      if (homeES && awayES) {
-        koTeamCandidates[koLocalId] = { ht: homeES, at: awayES };
-      } else if (homeEN || awayEN) {
-        // One team known but failed to map — actual mapping problem
+      const entry = {};
+      // Write ht/at only for non-third-slot matches (API greedy != Annex C for third slots)
+      if (!THIRD_SLOT_MATCH_IDS.has(koLocalId) && homeES && awayES) {
+        entry.ht = homeES;
+        entry.at = awayES;
+      } else if ((homeEN || awayEN) && !THIRD_SLOT_MATCH_IDS.has(koLocalId)) {
         console.warn(`KO match ${koLocalId} (${utcKey}): team mapping failed homeEN=${homeEN} awayEN=${awayEN}`);
       }
-      // both null → teams not yet determined, skip silently
+      // Write scores for all KO matches once played
+      if ((isFinished || isLive) && score?.home != null && score?.away != null) {
+        entry.home = String(score.home);
+        entry.away = String(score.away);
+        entry.live = isLive;
+      }
+      if (Object.keys(entry).length > 0) koTeamCandidates[koLocalId] = entry;
       continue;
     }
 
@@ -310,15 +323,17 @@ async function main() {
     }
   }
 
-  // 5b. Keep only KO team assignments that differ (stored in /results via multi-path PATCH)
-  // Using "id/ht" keys tells Firebase to merge into existing score objects without overwriting them.
+  // 5b. Keep only KO updates (team names + scores) that differ.
+  // Using "id/field" keys in the PATCH body tells Firebase to merge fields
+  // without overwriting other fields in the same match object.
   const koMultiPath = {};
-  for (const [id, teams] of Object.entries(koTeamCandidates)) {
-    const prev = current[id];
-    if (!prev || prev.ht !== teams.ht || prev.at !== teams.at) {
-      koMultiPath[`${id}/ht`] = teams.ht;
-      koMultiPath[`${id}/at`] = teams.at;
-    }
+  for (const [id, entry] of Object.entries(koTeamCandidates)) {
+    const prev = current[id] || {};
+    if (entry.ht !== undefined && entry.ht !== prev.ht) koMultiPath[`${id}/ht`] = entry.ht;
+    if (entry.at !== undefined && entry.at !== prev.at) koMultiPath[`${id}/at`] = entry.at;
+    if (entry.home !== undefined && entry.home !== prev.home) koMultiPath[`${id}/home`] = entry.home;
+    if (entry.away !== undefined && entry.away !== prev.away) koMultiPath[`${id}/away`] = entry.away;
+    if (entry.live !== undefined && !!entry.live !== !!prev.live) koMultiPath[`${id}/live`] = entry.live;
   }
 
   const hasScoreUpdates = Object.keys(updates).length > 0;

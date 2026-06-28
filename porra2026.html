@@ -1622,7 +1622,17 @@ function buildKOParticipants() {
       .slice(0, 8);
   }
 
+  // FIFA Annex C: definitive slot assignments per qualifying combination
+  const ANNEX_C = {
+    'BDEFIJKL': {
+      'A,B,C,D,F': 'D', 'C,D,F,G,H': 'F', 'C,E,F,H,I': 'E', 'E,H,I,J,K': 'K',
+      'B,E,F,I,J': 'B', 'A,E,H,I,J': 'I', 'E,F,G,I,J': 'J', 'D,E,I,J,L': 'L',
+    },
+  };
+
   const assignedThirds = new Set(); // deduplicate: each best-third goes to exactly one slot
+  let _annexCKey = null; // computed once per build
+  let _annexCOverride = null;
 
   function resolveTeam(slot) {
     if (slot.t === 'g') {
@@ -1633,6 +1643,17 @@ function buildKOParticipants() {
     if (slot.t === 'th') {
       if (!allGroupsComplete()) return null;
       const best = getBestThirds();
+      // Compute Annex C key once
+      if (_annexCKey === null) {
+        _annexCKey = best.slice(0,8).map(t => t.group).sort().join('');
+        _annexCOverride = ANNEX_C[_annexCKey] || null;
+      }
+      if (_annexCOverride) {
+        const poolsKey = slot.pools.join(',');
+        const grp = _annexCOverride[poolsKey];
+        if (grp) return best.find(t => t.group === grp)?.name || null;
+      }
+      // Greedy fallback
       const eligible = best.filter(t => slot.pools.includes(t.group) && !assignedThirds.has(t.name));
       const team = eligible[0]?.name || null;
       if (team) assignedThirds.add(team);
@@ -1657,9 +1678,11 @@ function buildKOParticipants() {
   }
 
   KO_DEFS.forEach(def => {
-    const r    = masterData[def.id];
-    const home = r?.ht ? r.ht : resolveTeam(def.hs);
-    const away = r?.at ? r.at : resolveTeam(def.as);
+    const r = masterData[def.id];
+    // Skip API team names when match has a third-place slot (API uses greedy, may differ from Annex C)
+    const hasThirdSlot = def.hs?.t === 'th' || def.as?.t === 'th';
+    const home = (!hasThirdSlot && r?.ht) ? r.ht : resolveTeam(def.hs);
+    const away = (!hasThirdSlot && r?.at) ? r.at : resolveTeam(def.as);
     koParticipantsCache[def.id] = { home, away, result: r || null };
   });
 

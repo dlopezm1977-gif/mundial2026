@@ -1055,10 +1055,23 @@ function getBestThirds(st) {
     .slice(0,8);
 }
 
-// Pre-assigns best 8 thirds to the 8 KO slots without repetition.
-// Each third can only go to one slot. Assignment is done greedily:
-// iterate slots in order of ranking (best third first), assign to the
-// highest-priority slot whose pools include that third's group.
+// FIFA Annex C: definitive slot assignments for each combination of 8 qualifying thirds.
+// Key: 8 group letters sorted (e.g. 'BDEFIJKL'). Value: poolsKey → group letter.
+// Add entries for new combinations as they arise. Falls back to greedy if not found.
+const ANNEX_C = {
+  'BDEFIJKL': {
+    'A,B,C,D,F': 'D', // Paraguay
+    'C,D,F,G,H': 'F', // Suecia
+    'C,E,F,H,I': 'E', // Ecuador
+    'E,H,I,J,K': 'K', // RD de Congo
+    'B,E,F,I,J': 'B', // Bosnia y Herzegovina
+    'A,E,H,I,J': 'I', // Senegal
+    'E,F,G,I,J': 'J', // Argelia
+    'D,E,I,J,L': 'L', // Ghana
+  },
+};
+
+// Pre-assigns best 8 thirds to the 8 KO slots per FIFA Annex C (falls back to greedy).
 let thirdAssignmentCache = null;
 function getThirdAssignment(st) {
   if (thirdAssignmentCache) return thirdAssignmentCache;
@@ -1076,14 +1089,25 @@ function getThirdAssignment(st) {
   ];
 
   const best = getBestThirds(st); // top 8 thirds sorted by quality
-  const assignment = {}; // pools key → team name
+  const qualKey = best.slice(0,8).map(t => t.group).sort().join('');
+  const overrides = ANNEX_C[qualKey];
+
+  if (overrides) {
+    const groupToTeam = Object.fromEntries(best.map(t => [t.group, t.name]));
+    const assignment = {};
+    for (const [poolsKey, grp] of Object.entries(overrides)) {
+      if (groupToTeam[grp]) assignment[poolsKey] = groupToTeam[grp];
+    }
+    thirdAssignmentCache = assignment;
+    return assignment;
+  }
+
+  // Greedy fallback: for each third (best first), find the first available slot
+  const assignment = {};
   const usedGroups = new Set();
   const usedSlots  = new Set();
-
-  // Greedy: for each third (best first), find the best available slot
   for (const third of best) {
     if (usedGroups.has(third.group)) continue;
-    // Find first available slot that accepts this third's group
     for (const slot of THIRD_SLOTS) {
       if (usedSlots.has(slot.key)) continue;
       if (slot.pools.includes(third.group)) {
@@ -1133,10 +1157,9 @@ function resolveSlot(slot, st, cache) {
     if (isPlayed(slot.mid)) {
       const r = results[slot.mid];
       const refM = ALL_BY_ID[slot.mid];
-      const refR = results[slot.mid];
       // Recursively resolve who was home/away in that match
-      const hR = refR?.ht ? {name:refR.ht} : (refM.home ? {name:refM.home} : resolveSlot(refM.hs, st, cache));
-      const aR = refR?.at ? {name:refR.at} : (refM.away ? {name:refM.away} : resolveSlot(refM.as, st, cache));
+      const hR = refM.home ? {name:refM.home} : resolveSlot(refM.hs, st, cache);
+      const aR = refM.away ? {name:refM.away} : resolveSlot(refM.as, st, cache);
       const hName = hR.name, aName = aR.name;
       if (hName && aName) {
         let winner=null, loser=null;
@@ -1747,8 +1770,12 @@ const BRACKET_ROUNDS = [
 
 function resolveMatchTeams(m, st, cache) {
   if (m.home !== undefined) return { hR:{name:m.home}, aR:{name:m.away} };
-  const r = results[m.id];
-  if (r?.ht && r?.at) return { hR:{name:r.ht}, aR:{name:r.at} };
+  // Skip API team names for matches with third-place slots — API uses greedy (wrong for Annex C)
+  const hasThirdSlot = m.hs?.type === 'third' || m.as?.type === 'third';
+  if (!hasThirdSlot) {
+    const r = results[m.id];
+    if (r?.ht && r?.at) return { hR:{name:r.ht}, aR:{name:r.at} };
+  }
   return { hR: resolveSlot(m.hs, st, cache), aR: resolveSlot(m.as, st, cache) };
 }
 
