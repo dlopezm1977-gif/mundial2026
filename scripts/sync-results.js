@@ -143,6 +143,48 @@ const EN_TO_ES = Object.fromEntries(Object.entries(TEAM_MAP).map(([es, en]) => [
 // Scores are flipped before writing to Firebase so they match our local home team.
 const SWAPPED_IDS = new Set([52]);
 
+// KO match UTC datetimes → local IDs (venue local time converted to UTC)
+// Used to sync team name assignments from the API to Firebase /koTeams
+const KO_UTC_LOOKUP = {
+  // 16avos de Final
+  '2026-06-28T22:00:00Z': 73,  // Los Ángeles PDT-7  15:00
+  '2026-06-29T18:00:00Z': 76,  // Houston CDT-5  13:00
+  '2026-06-29T20:30:00Z': 74,  // Boston EDT-4  16:30
+  '2026-06-30T02:00:00Z': 75,  // Monterrey CDT-5  21:00
+  '2026-06-30T18:00:00Z': 78,  // Dallas CDT-5  13:00
+  '2026-06-30T21:00:00Z': 77,  // Nueva Jersey EDT-4  17:00
+  '2026-07-01T02:00:00Z': 79,  // Ciudad de México CDT-5  21:00
+  '2026-07-01T16:00:00Z': 80,  // Atlanta EDT-4  12:00
+  '2026-07-01T23:00:00Z': 82,  // Seattle PDT-7  16:00
+  '2026-07-02T03:00:00Z': 81,  // San Francisco PDT-7  20:00
+  '2026-07-02T22:00:00Z': 84,  // Los Ángeles PDT-7  15:00
+  '2026-07-02T23:00:00Z': 83,  // Toronto EDT-4  19:00
+  '2026-07-03T06:00:00Z': 85,  // Vancouver PDT-7  23:00 (Jul 2)
+  '2026-07-03T19:00:00Z': 88,  // Dallas CDT-5  14:00
+  '2026-07-03T22:00:00Z': 86,  // Miami EDT-4  18:00
+  '2026-07-04T02:30:00Z': 87,  // Kansas City CDT-5  21:30 (Jul 3)
+  // Octavos de Final
+  '2026-07-04T18:00:00Z': 90,  // Houston CDT-5  13:00
+  '2026-07-04T21:00:00Z': 89,  // Philadelphia EDT-4  17:00
+  '2026-07-05T20:00:00Z': 91,  // Nueva Jersey EDT-4  16:00
+  '2026-07-06T01:00:00Z': 92,  // Ciudad de México CDT-5  20:00 (Jul 5)
+  '2026-07-06T20:00:00Z': 93,  // Dallas CDT-5  15:00
+  '2026-07-07T03:00:00Z': 94,  // Seattle PDT-7  20:00 (Jul 6)
+  '2026-07-07T16:00:00Z': 95,  // Atlanta EDT-4  12:00
+  '2026-07-07T23:00:00Z': 96,  // Vancouver PDT-7  16:00
+  // Cuartos de Final
+  '2026-07-09T20:00:00Z': 97,  // Boston EDT-4  16:00
+  '2026-07-10T22:00:00Z': 98,  // Los Ángeles PDT-7  15:00
+  '2026-07-11T21:00:00Z': 99,  // Miami EDT-4  17:00
+  '2026-07-12T02:00:00Z': 100, // Kansas City CDT-5  21:00 (Jul 11)
+  // Semifinales
+  '2026-07-14T20:00:00Z': 101, // Dallas CDT-5  15:00
+  '2026-07-15T19:00:00Z': 102, // Atlanta EDT-4  15:00
+  // 3er Puesto + Final
+  '2026-07-18T21:00:00Z': 103, // Miami EDT-4  17:00
+  '2026-07-19T19:00:00Z': 104, // Nueva Jersey EDT-4  15:00
+};
+
 // Build lookup: "HomeEN|AwayEN" → local match id
 const lookup = new Map();
 for (const m of GROUP_MATCHES) {
@@ -178,9 +220,9 @@ async function main() {
     return;
   }
 
-  // 1. Fetch finished and in-progress WC matches from football-data.org
+  // 1. Fetch all WC matches (group + KO, all statuses) from football-data.org
   const apiRes = await fetch(
-    'https://api.football-data.org/v4/competitions/WC/matches?status=FINISHED,IN_PLAY,PAUSED&season=2026',
+    'https://api.football-data.org/v4/competitions/WC/matches?season=2026',
     { headers: { 'X-Auth-Token': FOOTBALL_TOKEN } }
   );
   if (!apiRes.ok) {
@@ -190,38 +232,62 @@ async function main() {
   const { matches: apiMatches = [] } = await apiRes.json();
   const liveCount     = apiMatches.filter(m => m.status === 'IN_PLAY' || m.status === 'PAUSED').length;
   const finishedCount = apiMatches.filter(m => m.status === 'FINISHED').length;
-  console.log(`football-data.org: ${finishedCount} finished, ${liveCount} in progress`);
+  console.log(`football-data.org: ${finishedCount} finished, ${liveCount} in progress, ${apiMatches.length} total`);
 
   // 2. Build candidate updates from API results
   const candidates = {};
   const apiIdByLocalId = {};  // localId → football-data.org match id
   const statusByLocalId = {}; // localId → match status
+  const koTeamCandidates = {}; // localId → {ht, at} for KO bracket team names
   const unmatched = [];
 
   for (const m of apiMatches) {
     const homeEN = m.homeTeam?.name;
     const awayEN = m.awayTeam?.name;
     const score  = m.score?.fullTime;
-    if (!homeEN || !awayEN || score?.home == null || score?.away == null) continue;
+    const isLive = m.status === 'IN_PLAY' || m.status === 'PAUSED';
+    const isFinished = m.status === 'FINISHED';
 
-    const key = `${homeEN}|${awayEN}`;
-    const localId = lookup.get(key);
-    if (!localId) {
-      unmatched.push(`${homeEN} vs ${awayEN}`);
+    // Normalize utcDate to "YYYY-MM-DDTHH:MM:SSZ" format for lookup
+    const utcKey = (m.utcDate || '').slice(0, 19) + 'Z';
+
+    // Try group match lookup first (by team name pair)
+    if (homeEN && awayEN && (score?.home != null && score?.away != null) && (isLive || isFinished)) {
+      const key = `${homeEN}|${awayEN}`;
+      const localId = lookup.get(key);
+      if (localId) {
+        const flip = SWAPPED_IDS.has(localId);
+        candidates[localId] = { home: String(flip ? score.away : score.home), away: String(flip ? score.home : score.away), live: isLive };
+        apiIdByLocalId[localId] = m.id;
+        statusByLocalId[localId] = m.status;
+        continue;
+      }
+    }
+
+    // Try KO match lookup (by UTC datetime)
+    const koLocalId = KO_UTC_LOOKUP[utcKey];
+    if (koLocalId) {
+      const homeES = homeEN ? (EN_TO_ES[homeEN] || homeEN) : null;
+      const awayES = awayEN ? (EN_TO_ES[awayEN] || awayEN) : null;
+      if (homeES && awayES) {
+        koTeamCandidates[koLocalId] = { ht: homeES, at: awayES };
+      } else if (utcKey) {
+        console.warn(`KO match ${koLocalId} (${utcKey}): unknown teams homeEN=${homeEN} awayEN=${awayEN}`);
+      }
       continue;
     }
-    const isLive = m.status === 'IN_PLAY' || m.status === 'PAUSED';
-    const flip = SWAPPED_IDS.has(localId);
-    candidates[localId] = { home: String(flip ? score.away : score.home), away: String(flip ? score.home : score.away), live: isLive };
-    apiIdByLocalId[localId] = m.id;
-    statusByLocalId[localId] = m.status;
+
+    // Truly unmatched: log only for played matches with teams
+    if ((isLive || isFinished) && homeEN && awayEN) {
+      unmatched.push(`${homeEN} vs ${awayEN} [${utcKey}]`);
+    }
   }
 
   if (unmatched.length) {
-    console.warn('Unmatched teams (update TEAM_MAP if needed):', unmatched.join(', '));
+    console.warn('Unmatched teams (update TEAM_MAP or KO_UTC_LOOKUP):', unmatched.join(', '));
   }
 
-  if (Object.keys(candidates).length === 0) {
+  if (Object.keys(candidates).length === 0 && Object.keys(koTeamCandidates).length === 0) {
     console.log('No matches to sync');
     return;
   }
@@ -229,9 +295,13 @@ async function main() {
   // 3. Authenticate with Firebase
   const token = await getFirebaseToken();
 
-  // 4. Fetch current Firebase results to detect changes
-  const currentRes = await fetch(`${FIREBASE_DB_URL}/results.json?auth=${token}`);
-  const current = (await currentRes.json()) || {};
+  // 4. Fetch current Firebase results and koTeams to detect changes
+  const [currentRes, currentKoRes] = await Promise.all([
+    fetch(`${FIREBASE_DB_URL}/results.json?auth=${token}`),
+    fetch(`${FIREBASE_DB_URL}/koTeams.json?auth=${token}`),
+  ]);
+  const current   = (await currentRes.json())   || {};
+  const currentKo = (await currentKoRes.json()) || {};
 
   // 5. Keep only results that differ from what Firebase already has
   const updates = {};
@@ -242,17 +312,37 @@ async function main() {
     }
   }
 
-  if (Object.keys(updates).length === 0) {
+  // 5b. Keep only KO team assignments that differ
+  const koUpdates = {};
+  for (const [id, teams] of Object.entries(koTeamCandidates)) {
+    const prev = currentKo[id];
+    if (!prev || prev.ht !== teams.ht || prev.at !== teams.at) {
+      koUpdates[id] = teams;
+    }
+  }
+
+  if (Object.keys(updates).length === 0 && Object.keys(koUpdates).length === 0) {
     console.log('Results already up to date');
   } else {
     // 6. PATCH only the changed entries (leaves other results untouched)
-    const patchRes = await fetch(`${FIREBASE_DB_URL}/results.json?auth=${token}`, {
-      method: 'PATCH',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(updates),
-    });
-    if (!patchRes.ok) throw new Error(`Firebase PATCH failed: ${patchRes.status}`);
-    console.log(`Updated ${Object.keys(updates).length} result(s):`, updates);
+    if (Object.keys(updates).length > 0) {
+      const patchRes = await fetch(`${FIREBASE_DB_URL}/results.json?auth=${token}`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(updates),
+      });
+      if (!patchRes.ok) throw new Error(`Firebase PATCH failed: ${patchRes.status}`);
+      console.log(`Updated ${Object.keys(updates).length} result(s):`, updates);
+    }
+    if (Object.keys(koUpdates).length > 0) {
+      const koPatchRes = await fetch(`${FIREBASE_DB_URL}/koTeams.json?auth=${token}`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(koUpdates),
+      });
+      if (!koPatchRes.ok) throw new Error(`Firebase koTeams PATCH failed: ${koPatchRes.status}`);
+      console.log(`Updated ${Object.keys(koUpdates).length} KO team assignment(s):`, koUpdates);
+    }
   }
 
   // 7. Sync top scorers (non-fatal)

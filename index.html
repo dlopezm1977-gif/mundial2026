@@ -844,6 +844,7 @@ const KICKOFF = new Date('2026-06-11T19:00:00Z'); // partido inaugural: 21:00 ho
 
 // ── STATE ─────────────────────────────────────────────
 let results = {};
+let koTeams = {};
 let countdownInterval = null;
 let activeFilter = 'ALL';
 let activeDateFilter = null;
@@ -966,10 +967,14 @@ async function loadPorraStats() {
 async function loadResults() {
   setSyncStatus('loading');
   try {
-    const res = await fetch(FIREBASE_URL + '/results.json');
+    const [res, koRes] = await Promise.all([
+      fetch(FIREBASE_URL + '/results.json'),
+      fetch(FIREBASE_URL + '/koTeams.json'),
+    ]);
     if (!res.ok) throw new Error(res.status);
     const data = await res.json();
     results = data || {};
+    koTeams = (koRes.ok ? await koRes.json() : null) || {};
     favoriteMatches = results.favoriteMatches || JSON.parse(localStorage.getItem('mundial2026_favorites') || '{}');
     tveMatches = results.tveMatches || JSON.parse(localStorage.getItem('mundial2026_tve') || '{}');
     setSyncStatus('ok');
@@ -1133,9 +1138,10 @@ function resolveSlot(slot, st, cache) {
     if (isPlayed(slot.mid)) {
       const r = results[slot.mid];
       const refM = ALL_BY_ID[slot.mid];
+      const kT = koTeams[slot.mid];
       // Recursively resolve who was home/away in that match
-      const hR = refM.home ? {name:refM.home} : resolveSlot(refM.hs, st, cache);
-      const aR = refM.away ? {name:refM.away} : resolveSlot(refM.as, st, cache);
+      const hR = kT?.ht ? {name:kT.ht} : (refM.home ? {name:refM.home} : resolveSlot(refM.hs, st, cache));
+      const aR = kT?.at ? {name:kT.at} : (refM.away ? {name:refM.away} : resolveSlot(refM.as, st, cache));
       const hName = hR.name, aName = aR.name;
       if (hName && aName) {
         let winner=null, loser=null;
@@ -1337,8 +1343,7 @@ function openScoreModal(id) {
   const m=ALL_BY_ID[id];
   const r=results[id]||{};
   const isKO=m.phase!=='Fase de Grupos';
-  const hR=isKO?resolveSlot(m.hs,st,cache):{name:m.home};
-  const aR=isKO?resolveSlot(m.as,st,cache):{name:m.away};
+  const {hR, aR} = resolveMatchTeams(m, st, cache);
 
   document.getElementById('scoreModalTitle').textContent=`Partido ${id} — ${m.phase}`;
   document.getElementById('scoreModalDesc').textContent=`${m.venue} · ${fmtDateLong(m.date)} · ${argToSpain(m.t)} (hora España)`;
@@ -1747,6 +1752,8 @@ const BRACKET_ROUNDS = [
 
 function resolveMatchTeams(m, st, cache) {
   if (m.home !== undefined) return { hR:{name:m.home}, aR:{name:m.away} };
+  const kT = koTeams[m.id];
+  if (kT?.ht && kT?.at) return { hR:{name:kT.ht}, aR:{name:kT.at} };
   return { hR: resolveSlot(m.hs, st, cache), aR: resolveSlot(m.as, st, cache) };
 }
 

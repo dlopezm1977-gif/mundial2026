@@ -41,7 +41,7 @@ Organizada en cuatro pestañas:
 - El campeón se proclama en una caja dorada al final del cuadro en cuanto se disputa la final
 - Partido por el 3.er y 4.º puesto mostrado por separado bajo el cuadro principal
 - El admin puede editar resultados directamente desde el cuadro haciendo clic en cualquier partido
-- Algoritmo que asigna automáticamente los 8 mejores terceros a sus slots KO correctos
+- Los equipos de cada partido KO se obtienen directamente de la API (nodo `/koTeams`), lo que garantiza las asignaciones correctas de los 8 mejores terceros según el Anexo C oficial de la FIFA
 
 **Datos CSV**
 - Exportar/importar backup completo de resultados
@@ -246,6 +246,7 @@ Los datos se sincronizan en Firebase Realtime Database en tres nodos principales
 | Nodo | URL | Contenido |
 |---|---|---|
 | `/results` | `…/results.json` | Resultados de partidos (marcador, flag `live`, penaltis) y marcas TVE manual |
+| `/koTeams` | `…/koTeams.json` | Equipos de cada partido KO sincronizados desde la API: `{id: {ht: "España", at: "Alemania"}}` |
 | `/porras` | `…/porras.json` | Porras de todos los usuarios |
 | `/scorers` | `…/scorers.json` | Tabla de goleadores sincronizada automáticamente desde football-data.org |
 | `/album` | `…/album.json` | Estado del álbum de cromos (solo admin): clave `ESP01`…`ESP20`, `FWC00`…`FWC19` → 0/1/2 |
@@ -258,6 +259,10 @@ La URL y la configuración del SDK están en el código de cada fichero HTML. La
 {
   "rules": {
     "results": {
+      ".read": true,
+      ".write": "auth != null"
+    },
+    "koTeams": {
       ".read": true,
       ".write": "auth != null"
     },
@@ -278,6 +283,7 @@ La URL y la configuración del SDK están en el código de cada fichero HTML. La
 ```
 
 - `/results` — lectura pública; escritura solo para el admin autenticado (Firebase Auth) o el script de sync
+- `/koTeams` — lectura pública; escritura solo para el script de sync (equipos de partidos KO)
 - `/porras` — lectura y escritura públicas (los usuarios guardan su porra sin login)
 - `/scorers` — lectura pública; escritura solo para el admin / script de sync
 - `/album` — lectura y escritura solo para el admin (datos privados del tracker de cromos)
@@ -384,8 +390,8 @@ Cuando la conexión se recupera (al pulsar **↺ Actualizar**), el estado vuelve
 | `index.html` | Seguimiento de partidos, clasificaciones de grupo y cuadro de eliminatorias |
 | `porra2026.html` | Sistema de predicciones y leaderboard |
 | `manifest.json` | Manifiesto PWA (nombre, icono, colores, modo standalone) |
-| `sw.js` | Service worker — caché offline de los ficheros principales (versión `v29`); cachea: `index.html`, `porra2026.html`, `manifest.json`, `icons/icon-192.png`, `assets/img/DAZN.png`, `assets/img/TVE.png`; la versión se incrementa en cada deploy para forzar recarga en móvil |
-| `scripts/sync-results.js` | Script Node.js ejecutado por GitHub Actions cada 5 min; obtiene resultados de football-data.org y los escribe en Firebase; también sincroniza la tabla de goleadores (`/scorers`) |
+| `sw.js` | Service worker — caché offline de los ficheros principales (versión `v31`); cachea: `index.html`, `porra2026.html`, `manifest.json`, `icons/icon-192.png`, `assets/img/DAZN.png`, `assets/img/TVE.png`; la versión se incrementa en cada deploy para forzar recarga en móvil |
+| `scripts/sync-results.js` | Script Node.js ejecutado por GitHub Actions cada 5 min; obtiene resultados de football-data.org, los escribe en Firebase (`/results`), sincroniza los equipos de partidos KO (`/koTeams`) y la tabla de goleadores (`/scorers`) |
 | `.github/workflows/sync-results.yml` | Workflow de GitHub Actions disparado externamente (cron-job.org) cada 5 min para ejecutar el script de sincronización |
 | `icons/icon-192.png` | Icono de la app (192×192 px) para launcher y apple-touch-icon |
 | `assets/img/DAZN.png` | Logo DAZN (usado en los match cards) |
@@ -408,7 +414,7 @@ Los resultados y goleadores se sincronizan automáticamente con **football-data.
 ### Limitaciones de la API gratuita
 
 - football-data.org (plan gratuito): devuelve marcadores y goleadores, pero **no el desglose gol a gol** (minuto, anotador, tipo); la función `syncGoals` existe en el código pero está desactivada
-- El sync cubre solo la **fase de grupos** (partidos 1–72); los KO se sincronizan cuando football-data.org los actualice con los equipos reales
+- El sync cubre la **fase de grupos** (partidos 1–72) para marcadores y también los **partidos KO** (73–104) para nombres de equipo; las asignaciones KO se leen incluso de partidos planificados (la API los devuelve con equipos asignados aunque aún no se hayan jugado)
 
 ### Secretos necesarios (GitHub → Settings → Secrets)
 
