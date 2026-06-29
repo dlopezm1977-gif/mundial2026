@@ -160,7 +160,7 @@ const KO_UTC_LOOKUP = {
   '2026-06-30T21:00:00Z': 77,  // Nueva Jersey EDT-4  17:00 (bracket 23:00 CEST)
   '2026-07-01T01:00:00Z': 79,  // Ciudad de México CDT-5  20:00 (bracket 03:00 CEST Jul 1)
   '2026-07-01T16:00:00Z': 80,  // Atlanta EDT-4  12:00 (bracket 18:00 CEST)
-  '2026-07-01T21:00:00Z': 82,  // Seattle PDT-7  14:00 (bracket 23:00 CEST)
+  '2026-07-01T20:00:00Z': 82,  // Seattle PDT-7  16:00 (bracket 22:00 CEST)
   '2026-07-02T00:00:00Z': 81,  // San Francisco PDT-7  17:00 (bracket 02:00 CEST Jul 2)
   '2026-07-02T19:00:00Z': 84,  // Los Ángeles PDT-7  12:00 (bracket 21:00 CEST)
   '2026-07-02T23:00:00Z': 83,  // Toronto EDT-4  19:00 (bracket 01:00 CEST Jul 3)
@@ -168,23 +168,23 @@ const KO_UTC_LOOKUP = {
   '2026-07-03T18:00:00Z': 88,  // Dallas CDT-5  13:00 (bracket 20:00 CEST)
   '2026-07-03T22:00:00Z': 86,  // Miami EDT-4  18:00 (bracket 00:00 CEST Jul 4)
   '2026-07-04T01:30:00Z': 87,  // Kansas City CDT-5  20:30 (bracket 03:30 CEST Jul 4)
-  // Octavos de Final
-  '2026-07-04T18:00:00Z': 90,  // Houston CDT-5  13:00
-  '2026-07-04T21:00:00Z': 89,  // Philadelphia EDT-4  17:00
-  '2026-07-05T20:00:00Z': 91,  // Nueva Jersey EDT-4  16:00
-  '2026-07-06T01:00:00Z': 92,  // Ciudad de México CDT-5  20:00 (Jul 5)
-  '2026-07-06T20:00:00Z': 93,  // Dallas CDT-5  15:00
-  '2026-07-07T03:00:00Z': 94,  // Seattle PDT-7  20:00 (Jul 6)
-  '2026-07-07T16:00:00Z': 95,  // Atlanta EDT-4  12:00
-  '2026-07-07T23:00:00Z': 96,  // Vancouver PDT-7  16:00
+  // Octavos de Final — mismo criterio: t(HTML,EDT) + 4 = UTC
+  '2026-07-04T17:00:00Z': 90,  // Houston  13:00 EDT (19:00 España)
+  '2026-07-04T21:00:00Z': 89,  // Philadelphia  17:00 EDT (23:00 España)
+  '2026-07-05T20:00:00Z': 91,  // Nueva Jersey  16:00 EDT (22:00 España)
+  '2026-07-06T00:00:00Z': 92,  // Ciudad de México  20:00 EDT (02:00 España Jul 6)
+  '2026-07-06T19:00:00Z': 93,  // Dallas  15:00 EDT (21:00 España)
+  '2026-07-07T00:00:00Z': 94,  // Seattle  20:00 EDT (02:00 España Jul 7)
+  '2026-07-07T16:00:00Z': 95,  // Atlanta  12:00 EDT (18:00 España)
+  '2026-07-07T20:00:00Z': 96,  // Vancouver  16:00 EDT (22:00 España)
   // Cuartos de Final
-  '2026-07-09T20:00:00Z': 97,  // Boston EDT-4  16:00
-  '2026-07-10T22:00:00Z': 98,  // Los Ángeles PDT-7  15:00
-  '2026-07-11T21:00:00Z': 99,  // Miami EDT-4  17:00
-  '2026-07-12T02:00:00Z': 100, // Kansas City CDT-5  21:00 (Jul 11)
+  '2026-07-09T20:00:00Z': 97,  // Boston  16:00 EDT (22:00 España)
+  '2026-07-10T19:00:00Z': 98,  // Los Ángeles  15:00 EDT (21:00 España)
+  '2026-07-11T21:00:00Z': 99,  // Miami  17:00 EDT (23:00 España)
+  '2026-07-12T01:00:00Z': 100, // Kansas City  21:00 EDT (03:00 España Jul 12)
   // Semifinales
-  '2026-07-14T20:00:00Z': 101, // Dallas CDT-5  15:00
-  '2026-07-15T19:00:00Z': 102, // Atlanta EDT-4  15:00
+  '2026-07-14T19:00:00Z': 101, // Dallas  15:00 EDT (21:00 España)
+  '2026-07-15T19:00:00Z': 102, // Atlanta  15:00 EDT (21:00 España)
   // 3er Puesto + Final
   '2026-07-18T21:00:00Z': 103, // Miami EDT-4  17:00
   '2026-07-19T19:00:00Z': 104, // Nueva Jersey EDT-4  15:00
