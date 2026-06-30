@@ -249,7 +249,12 @@ async function main() {
   for (const m of apiMatches) {
     const homeEN = m.homeTeam?.name;
     const awayEN = m.awayTeam?.name;
-    const score  = m.score?.fullTime;
+    const isPenalty = m.score?.duration === 'PENALTY_SHOOTOUT';
+    const score = isPenalty
+      ? { home: (m.score.regularTime?.home ?? 0) + (m.score.extraTime?.home ?? 0),
+          away: (m.score.regularTime?.away ?? 0) + (m.score.extraTime?.away ?? 0) }
+      : m.score?.fullTime;
+    const penScore = isPenalty ? m.score?.penalties : null;
     const isLive = m.status === 'IN_PLAY' || m.status === 'PAUSED';
     const isFinished = m.status === 'FINISHED';
 
@@ -262,7 +267,12 @@ async function main() {
       const localId = lookup.get(key);
       if (localId) {
         const flip = SWAPPED_IDS.has(localId);
-        candidates[localId] = { home: String(flip ? score.away : score.home), away: String(flip ? score.home : score.away), live: isLive };
+        const entry = { home: String(flip ? score.away : score.home), away: String(flip ? score.home : score.away), live: isLive };
+        if (penScore?.home != null) {
+          entry.pen1 = String(flip ? penScore.away : penScore.home);
+          entry.pen2 = String(flip ? penScore.home : penScore.away);
+        }
+        candidates[localId] = entry;
         apiIdByLocalId[localId] = m.id;
         statusByLocalId[localId] = m.status;
         continue;
@@ -287,6 +297,10 @@ async function main() {
         entry.home = String(score.home);
         entry.away = String(score.away);
         entry.live = isLive;
+        if (penScore?.home != null) {
+          entry.pen1 = String(penScore.home);
+          entry.pen2 = String(penScore.away);
+        }
       }
       if (Object.keys(entry).length > 0) koTeamCandidates[koLocalId] = entry;
       continue;
@@ -318,7 +332,8 @@ async function main() {
   const updates = {};
   for (const [id, score] of Object.entries(candidates)) {
     const prev = current[id];
-    if (!prev || prev.home !== score.home || prev.away !== score.away || !!prev.live !== score.live) {
+    if (!prev || prev.home !== score.home || prev.away !== score.away || !!prev.live !== score.live
+        || prev.pen1 !== score.pen1 || prev.pen2 !== score.pen2) {
       updates[id] = score;
     }
   }
@@ -334,6 +349,8 @@ async function main() {
     if (entry.home !== undefined && entry.home !== prev.home) koMultiPath[`${id}/home`] = entry.home;
     if (entry.away !== undefined && entry.away !== prev.away) koMultiPath[`${id}/away`] = entry.away;
     if (entry.live !== undefined && !!entry.live !== !!prev.live) koMultiPath[`${id}/live`] = entry.live;
+    if (entry.pen1 !== undefined && entry.pen1 !== prev.pen1) koMultiPath[`${id}/pen1`] = entry.pen1;
+    if (entry.pen2 !== undefined && entry.pen2 !== prev.pen2) koMultiPath[`${id}/pen2`] = entry.pen2;
   }
 
   const hasScoreUpdates = Object.keys(updates).length > 0;
