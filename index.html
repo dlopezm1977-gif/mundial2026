@@ -275,10 +275,11 @@
   .penalty-inp:focus{border-color:var(--accent);}
   .penalty-sep{font-family:'Bebas Neue',sans-serif;font-size:1.6rem;color:var(--accent);opacity:.5;}
   .penalty-hint{font-size:.6rem;color:var(--muted);text-align:center;margin-top:.4rem;font-style:italic;}
-  /* Penalty badge in match card */
+  /* Penalty badge in match card — lives inside .match-score so it's visible on all screen sizes */
+  .pen-row{grid-column:1/-1;text-align:center;padding-top:.15rem;}
   .pen-badge{font-family:'DM Mono',monospace;font-size:.58rem;color:var(--accent);
     background:rgba(232,200,74,.12);border:1px solid rgba(232,200,74,.2);
-    padding:.08rem .32rem;border-radius:3px;white-space:nowrap;margin-top:.15rem;display:inline-block;}
+    padding:.08rem .32rem;border-radius:3px;white-space:nowrap;display:inline-block;}
   @media(max-width:680px){
     .match-card{grid-template-columns:65px 1fr 108px 1fr 70px 26px;}
     .match-card.admin{grid-template-columns:64px 65px 1fr 108px 1fr 70px 26px;}
@@ -1330,11 +1331,12 @@ function renderMatches() {
             <input class="score-input" type="number" value="${hScore}" min="0" max="99" placeholder="—" readonly>
             <span class="score-sep">:</span>
             <input class="score-input" type="number" value="${aScore}" min="0" max="99" placeholder="—" readonly>
+            ${penStr ? `<div class="pen-row">${penStr}</div>` : ''}
           </div>
           ${teamCellHTML(aR,'away')}
           <div class="match-info">
             <span class="match-group-badge ${badgeClass}">${badgeLabel}</span><br>
-            ${penStr}${penStr?'':''}<span title="${m.venue}">${m.venue}</span>
+            <span title="${m.venue}">${m.venue}</span>
           </div>
           <div class="match-save">
             <button class="save-btn${played?' saved':''}${!canEdit?' disabled':''}"
